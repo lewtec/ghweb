@@ -416,7 +416,7 @@ A v1 cut is “done” when:
 
 ## 13. Design (impeccable)
 
-This SPEC intentionally does **not** freeze visual identity (palette, type, spacing rituals beyond daisyUI defaults).
+This SPEC intentionally does **not** freeze visual identity (palette, type, spacing rituals beyond daisyUI defaults), **except** the status-badge color legend in §13.1 (workflow semantics, not brand polish).
 
 Planned follow-up:
 
@@ -425,6 +425,28 @@ Planned follow-up:
 - Keep behavior contracts here; keep visual system in DESIGN.md  
 
 Register: **product / tool UI** (design serves the workflow), not marketing brand site.
+
+### 13.1 Status badge color legend
+
+Semantic tones (daisyUI badge classes). One legend app-wide for lifecycle and review chips. Metadata chips (label names, rate-limit counts, hunk numbers) are out of scope.
+
+| Meaning | Tone | Classes | Used for |
+|--------|------|---------|----------|
+| Good path | **success** | `badge-success` | Open issue/PR; **Approved** review |
+| Active friction | **warning** (solid) | `badge-warning` (+ `text-warning-content` when needed) | **Changes requested** |
+| Incomplete review | **warning outline** | `badge-outline badge-warning` | **Pending** review / pending line comments |
+| WIP / in progress | **info** | `badge-info` (+ `text-info-content` when needed) | **Merging…** |
+| Terminal stop | **error** | `badge-error` | **Closed** issue; closed unmerged PR |
+| Quiet / low urgency | **ghost** | `badge-ghost border border-base-300` | **Draft** PR; **Commented** review |
+| Quiet + historical | **ghost muted** | ghost + `opacity-70` | **Dismissed** review |
+| Merged (special) | **purple** | `bg-[#8250df] text-white` (hard-coded) | **Merged** PR only — sole non-daisy exception (GitHub muscle memory) |
+
+**Encoding rules**
+
+1. Prefer full **switch** on state in `ReviewStateBadge` / `PrStateBadge` / `IssueStateBadge` — no ad-hoc `badge-warning` for the same meaning elsewhere.  
+2. Pending UI chrome (PR header “Pending review”, conversation “Pending”, files line-comment pending) must use **outline warning**, same as review state `PENDING`.  
+3. Do **not** use solid warning for pending, or error for changes requested.  
+4. One-line mnemonic: green = good path · yellow solid = review friction · yellow outline = unfinished review · blue = WIP · red = closed · ghost = quiet · purple = merged only.
 
 ---
 
@@ -452,6 +474,8 @@ Decisions locked in the 2026-07 grill session:
 18. External links open in a **new tab**
 19. PR **Files** tab is full-width
 20. Chrome: breadcrumb + section icons; no sidebar; ⌘K slash commands; line/hunk comments via DiffView widgets + review threads (`target=_blank` + `noopener noreferrer`)  
+21. Status badge colors: SPEC §13.1 (changes requested = solid warning; pending = outline warning; merging = info; closed = error; approved/open = success; draft/commented = ghost; merged = purple only)  
+
 
 ---
 

@@ -5,7 +5,9 @@ type Props = {
   className?: string;
 };
 
-/** Colored issue status chip (open green / closed red). */
+/**
+ * Issue lifecycle chip. Colors follow SPEC §13.1 status badge legend.
+ */
 export function IssueStateBadge({ state, className }: Props) {
   const open = state === 'OPEN';
   return (

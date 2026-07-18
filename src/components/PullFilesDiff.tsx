@@ -248,7 +248,7 @@ function SafeDiffView({
                   <div className="flex flex-wrap items-center gap-1.5 text-xs opacity-60">
                     <span>@{c.authorLogin ?? 'ghost'}</span>
                     {c.state === 'PENDING' ? (
-                      <span className="badge badge-warning badge-xs opacity-100">
+                      <span className="badge badge-xs badge-outline badge-warning opacity-100">
                         Pending
                       </span>
                     ) : null}

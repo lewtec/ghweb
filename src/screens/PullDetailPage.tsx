@@ -7,7 +7,10 @@ import {
 } from 'react-relay';
 import { lazy, Suspense, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import type { PullDetailPageQuery } from './__generated__/PullDetailPageQuery.graphql';
+import type {
+  PullDetailPageQuery,
+  PullDetailPageQuery$data,
+} from './__generated__/PullDetailPageQuery.graphql';
 import type { PullDetailPageMergeMutation } from './__generated__/PullDetailPageMergeMutation.graphql';
 import type { PullDetailPageCloseMutation } from './__generated__/PullDetailPageCloseMutation.graphql';
 import type { PullDetailPageReviewMutation } from './__generated__/PullDetailPageReviewMutation.graphql';
@@ -20,6 +23,7 @@ import { ExternalLink } from '@/components/ExternalLink';
 import { AuthorByline } from '@/components/AuthorByline';
 import { GithubMarkdown } from '@/components/GithubMarkdown';
 import { PrStateBadge } from '@/components/PrStateBadge';
+import { ReviewStateBadge } from '@/components/ReviewStateBadge';
 
 const PullFilesDiff = lazy(() =>
   import('@/components/PullFilesDiff').then((m) => ({
@@ -29,6 +33,9 @@ const PullFilesDiff = lazy(() =>
 
 const query = graphql`
   query PullDetailPageQuery($owner: String!, $name: String!, $number: Int!) {
+    viewer {
+      login
+    }
     repository(owner: $owner, name: $name) {
       mergeCommitAllowed
       squashMergeAllowed
@@ -60,6 +67,19 @@ const query = graphql`
           state
           body
           bodyHTML
+          viewerDidAuthor
+        }
+        pendingReviews: reviews(first: 10, states: [PENDING]) {
+          nodes {
+            id
+            state
+            body
+            bodyHTML
+            viewerDidAuthor
+            author {
+              login
+            }
+          }
         }
         reviews(first: 20) {
           nodes {
@@ -75,6 +95,7 @@ const query = graphql`
             body
             bodyHTML
             createdAt
+            viewerDidAuthor
           }
         }
         comments(first: 40) {
@@ -294,8 +315,33 @@ export function PullDetailPage({
       })) ?? [];
 
   const canReview = !pr.merged && pr.state === 'OPEN';
-  const pendingReview =
-    pr.viewerLatestReview?.state === 'PENDING' ? pr.viewerLatestReview : null;
+  const viewerLogin = data.viewer?.login;
+
+  /** Line comments create a PENDING review; prefer reviews(states:[PENDING]). */
+  const findPendingReview = (
+    payload: PullDetailPageQuery$data | null | undefined,
+  ) => {
+    const pull = payload?.repository?.pullRequest;
+    if (!pull) return null;
+    const login = payload?.viewer?.login ?? viewerLogin;
+    return (
+      pull.pendingReviews?.nodes?.find(
+        (r) =>
+          r &&
+          (r.viewerDidAuthor || (login != null && r.author?.login === login)),
+      ) ??
+      (pull.viewerLatestReview?.state === 'PENDING' &&
+      pull.viewerLatestReview.viewerDidAuthor !== false
+        ? pull.viewerLatestReview
+        : null) ??
+      pull.reviews?.nodes?.find(
+        (r) => r?.state === 'PENDING' && r.viewerDidAuthor,
+      ) ??
+      null
+    );
+  };
+
+  const pendingReview = findPendingReview(data);
 
   const allowedMethods: MergeMethod[] = (
     [
@@ -312,6 +358,112 @@ export function PullDetailPage({
       : (allowedMethods[0] ?? 'MERGE');
 
   const activeMergeMethod = mergeMethod ?? defaultMethod;
+
+  type ReviewEvent = 'APPROVE' | 'COMMENT' | 'REQUEST_CHANGES';
+
+  const reviewBusy = reviewInFlight || submitInFlight || discardInFlight;
+
+  const runSubmitPending = (
+    reviewId: string,
+    event: ReviewEvent,
+    label: string,
+    body: string | null,
+  ) => {
+    commitSubmitReview({
+      variables: { reviewId, event, body },
+      onCompleted: (resp) => {
+        if (!resp.submitPullRequestReview?.pullRequestReview) {
+          toast.error('Submit review failed', 'GitHub returned no review');
+          return;
+        }
+        setReviewBody('');
+        toast.info(`Review submitted: ${label}`);
+        refresh();
+      },
+      onError: (e) => toast.error('Submit review failed', e.message),
+    });
+  };
+
+  /**
+   * Submit a verdict. If a pending review already exists (line comments, etc.),
+   * submit that via submitPullRequestReview instead of addPullRequestReview.
+   */
+  const runReview = (event: ReviewEvent, label: string) => {
+    const body = reviewBody.trim();
+    if (event === 'COMMENT' && !body) {
+      toast.error(
+        'Comment review needs a body',
+        'Type feedback in the review field, then try again.',
+      );
+      return;
+    }
+    const bodyVar = body || null;
+
+    if (pendingReview) {
+      runSubmitPending(pendingReview.id, event, label, bodyVar);
+      return;
+    }
+
+    commitReview({
+      variables: { id: pr.id, event, body: bodyVar },
+      onCompleted: (resp) => {
+        const review = resp.addPullRequestReview?.pullRequestReview;
+        if (!review) {
+          toast.error(
+            'Review failed',
+            'GitHub returned no review (check permissions / branch rules)',
+          );
+          return;
+        }
+        setReviewBody('');
+        toast.info(
+          review.state === 'PENDING'
+            ? 'Review started (pending)'
+            : `Review: ${label} (${review.state})`,
+        );
+        refresh();
+      },
+      onError: (e) => {
+        const msg = e.message || '';
+        // Race / stale store: pending exists but UI missed it → resolve id + submit
+        if (/one pending review/i.test(msg)) {
+          void fetchQuery<PullDetailPageQuery>(env, query, variables, {
+            fetchPolicy: 'network-only',
+          })
+            .toPromise()
+            .then((fresh) => {
+              const pending = findPendingReview(fresh);
+              if (pending) {
+                toast.info('Found pending review — submitting…');
+                runSubmitPending(pending.id, event, label, bodyVar);
+                return;
+              }
+              toast.error(
+                'You already have a pending review',
+                'Could not load it. Discard on GitHub or refresh and try again.',
+              );
+            })
+            .catch((err: Error) =>
+              toast.error('Review failed', err.message || msg),
+            );
+          return;
+        }
+        toast.error('Review failed', msg);
+      },
+    });
+  };
+
+  const runDiscardPending = () => {
+    if (!pendingReview) return;
+    commitDiscardReview({
+      variables: { reviewId: pendingReview.id },
+      onCompleted: () => {
+        toast.info('Pending review discarded');
+        refresh();
+      },
+      onError: (e) => toast.error('Discard failed', e.message),
+    });
+  };
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-3rem)] w-full">
@@ -358,9 +510,7 @@ export function PullDetailPage({
 
           <div className="flex flex-wrap items-center gap-1.5 shrink-0 ms-auto pb-1">
             {pendingReview ? (
-              <span className="badge badge-warning badge-sm gap-1">
-                Pending review
-              </span>
+              <ReviewStateBadge state="PENDING" label="Pending review" />
             ) : null}
 
             {canReview ? (
@@ -390,147 +540,40 @@ export function PullDetailPage({
                       onKeyDown={(e) => e.stopPropagation()}
                     />
                   </li>
+                  <li className="menu-title">
+                    <span>
+                      {pendingReview ? 'Submit pending' : 'Submit review'}
+                    </span>
+                  </li>
+                  {(
+                    [
+                      ['APPROVE', 'Approve'],
+                      ['COMMENT', pendingReview ? 'Comment only' : 'Comment'],
+                      ['REQUEST_CHANGES', 'Request changes'],
+                    ] as const
+                  ).map(([event, label]) => (
+                    <li key={event}>
+                      <button
+                        type="button"
+                        disabled={reviewBusy}
+                        onClick={() => runReview(event, label)}
+                      >
+                        {label}
+                      </button>
+                    </li>
+                  ))}
                   {pendingReview ? (
-                    <>
-                      <li className="menu-title">
-                        <span>Submit pending</span>
-                      </li>
-                      {(
-                        [
-                          ['APPROVE', 'Approve'],
-                          ['COMMENT', 'Comment only'],
-                          ['REQUEST_CHANGES', 'Request changes'],
-                        ] as const
-                      ).map(([event, label]) => (
-                        <li key={event}>
-                          <button
-                            type="button"
-                            disabled={submitInFlight}
-                            onClick={() => {
-                              const body = reviewBody.trim();
-                              if (event === 'COMMENT' && !body) {
-                                toast.error(
-                                  'Comment review needs a body',
-                                  'Add text in the review box on the Conversation tab, or pick Approve / Request changes.',
-                                );
-                                return;
-                              }
-                              commitSubmitReview({
-                                variables: {
-                                  reviewId: pendingReview.id,
-                                  event,
-                                  body: body || null,
-                                },
-                                onCompleted: (resp) => {
-                                  if (
-                                    !resp.submitPullRequestReview
-                                      ?.pullRequestReview
-                                  ) {
-                                    toast.error(
-                                      'Submit review failed',
-                                      'GitHub returned no review',
-                                    );
-                                    return;
-                                  }
-                                  setReviewBody('');
-                                  toast.info(`Review submitted: ${label}`);
-                                  refresh();
-                                },
-                                onError: (e) =>
-                                  toast.error(
-                                    'Submit review failed',
-                                    e.message,
-                                  ),
-                              });
-                            }}
-                          >
-                            {label}
-                          </button>
-                        </li>
-                      ))}
-                      <li>
-                        <button
-                          type="button"
-                          className="text-error"
-                          disabled={discardInFlight}
-                          onClick={() => {
-                            commitDiscardReview({
-                              variables: { reviewId: pendingReview.id },
-                              onCompleted: () => {
-                                toast.info('Pending review discarded');
-                                refresh();
-                              },
-                              onError: (e) =>
-                                toast.error('Discard failed', e.message),
-                            });
-                          }}
-                        >
-                          Discard pending
-                        </button>
-                      </li>
-                    </>
-                  ) : (
-                    <>
-                      <li className="menu-title">
-                        <span>Submit review</span>
-                      </li>
-                      {(
-                        [
-                          ['APPROVE', 'Approve'],
-                          ['COMMENT', 'Comment'],
-                          ['REQUEST_CHANGES', 'Request changes'],
-                        ] as const
-                      ).map(([event, label]) => (
-                        <li key={event}>
-                          <button
-                            type="button"
-                            disabled={reviewInFlight}
-                            onClick={() => {
-                              const body = reviewBody.trim();
-                              // COMMENT event requires a body per GitHub API
-                              if (event === 'COMMENT' && !body) {
-                                toast.error(
-                                  'Comment review needs a body',
-                                  'Type feedback in the review box on Conversation, then try again.',
-                                );
-                                return;
-                              }
-                              commitReview({
-                                variables: {
-                                  id: pr.id,
-                                  event,
-                                  body: body || null,
-                                },
-                                onCompleted: (resp) => {
-                                  const review =
-                                    resp.addPullRequestReview
-                                      ?.pullRequestReview;
-                                  if (!review) {
-                                    toast.error(
-                                      'Review failed',
-                                      'GitHub returned no review (check permissions / branch rules)',
-                                    );
-                                    return;
-                                  }
-                                  setReviewBody('');
-                                  toast.info(
-                                    review.state === 'PENDING'
-                                      ? 'Review started (pending)'
-                                      : `Review: ${label} (${review.state})`,
-                                  );
-                                  refresh();
-                                },
-                                onError: (e) =>
-                                  toast.error('Review failed', e.message),
-                              });
-                            }}
-                          >
-                            {label}
-                          </button>
-                        </li>
-                      ))}
-                    </>
-                  )}
+                    <li>
+                      <button
+                        type="button"
+                        className="text-error"
+                        disabled={discardInFlight}
+                        onClick={runDiscardPending}
+                      >
+                        Discard pending
+                      </button>
+                    </li>
+                  ) : null}
                 </ul>
               </div>
             ) : null}
@@ -694,14 +737,12 @@ export function PullDetailPage({
                               : null
                           }
                           meta={
-                            r.state === 'PENDING' ? undefined : r.state
+                            r.createdAt
+                              ? new Date(r.createdAt).toLocaleString()
+                              : undefined
                           }
                         />
-                        {r.state === 'PENDING' ? (
-                          <span className="badge badge-warning badge-sm shrink-0">
-                            Pending
-                          </span>
-                        ) : null}
+                        <ReviewStateBadge state={r.state} />
                       </div>
                       {r.body || r.bodyHTML ? (
                         <div className="mt-1">
@@ -745,7 +786,12 @@ export function PullDetailPage({
 
             {!pr.merged && pr.state === 'OPEN' ? (
               <div className="space-y-2 border border-base-300 rounded-box p-3">
-                <div className="text-sm font-medium">Submit review</div>
+                <div className="text-sm font-medium flex flex-wrap items-center gap-2">
+                  {pendingReview ? 'Submit pending review' : 'Submit review'}
+                  {pendingReview ? (
+                    <ReviewStateBadge state="PENDING" />
+                  ) : null}
+                </div>
                 <textarea
                   className="textarea textarea-bordered w-full min-h-20"
                   placeholder="Optional review body"
@@ -764,27 +810,22 @@ export function PullDetailPage({
                       key={event}
                       type="button"
                       className="btn btn-sm"
-                      disabled={reviewInFlight}
-                      onClick={() => {
-                        commitReview({
-                          variables: {
-                            id: pr.id,
-                            event,
-                            body: reviewBody.trim() || null,
-                          },
-                          onCompleted: () => {
-                            setReviewBody('');
-                            toast.info(`Review: ${label}`);
-                            refresh();
-                          },
-                          onError: (e) =>
-                            toast.error('Review failed', e.message),
-                        });
-                      }}
+                      disabled={reviewBusy}
+                      onClick={() => runReview(event, label)}
                     >
                       {label}
                     </button>
                   ))}
+                  {pendingReview ? (
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-ghost text-error"
+                      disabled={discardInFlight}
+                      onClick={runDiscardPending}
+                    >
+                      Discard pending
+                    </button>
+                  ) : null}
                 </div>
               </div>
             ) : null}

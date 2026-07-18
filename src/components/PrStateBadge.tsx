@@ -1,7 +1,7 @@
 import { cn } from '@/lib/cls';
 
 export type PrStateBadgeProps = {
-  state: string; // OPEN | CLOSED
+  state: string; // OPEN | CLOSED | MERGED
   merged?: boolean | null;
   isDraft?: boolean | null;
   /** Transient UI while merge mutation is in flight */
@@ -10,7 +10,7 @@ export type PrStateBadgeProps = {
 };
 
 /**
- * Colored PR status chip (GitHub-like: green open, gray draft, purple merged, red closed).
+ * PR lifecycle chip. Colors follow SPEC §13.1 status badge legend.
  */
 export function PrStateBadge({
   state,
@@ -24,11 +24,11 @@ export function PrStateBadge({
 
   if (merging) {
     label = 'Merging…';
-    colorClass = 'badge-warning text-warning-content';
+    // WIP / in progress
+    colorClass = 'badge-info text-info-content';
   } else if (merged || state === 'MERGED') {
     label = 'Merged';
-    // purple — not a daisyUI semantic; fixed brand-ish hues for light/dark
-    // GitHub-like purple (works on light/dark base without class-based dark mode)
+    // Only non-daisy exception (GitHub purple muscle memory)
     colorClass = 'border-transparent bg-[#8250df] text-white';
   } else if (state === 'CLOSED') {
     label = 'Closed';
