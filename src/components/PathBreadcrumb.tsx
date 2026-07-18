@@ -46,8 +46,8 @@ export function PathBreadcrumb({
       )}
     >
       <Link
-        to="/$owner/$name/tree/$ref/$"
-        params={{ owner, name, ref: refName, _splat: '' }}
+        to="/$owner/$name/tree/$ref"
+        params={{ owner, name, ref: refName }}
         className={cn(
           linkCls,
           !dense && 'opacity-80 shrink-0',

@@ -189,6 +189,28 @@ const repoIndexRoute = createRoute({
   },
 });
 
+/** Tree at ref root (no path segments) — e.g. /owner/repo/tree/main */
+const treeRootRoute = createRoute({
+  getParentRoute: () => repoLayoutRoute,
+  path: '/tree/$ref',
+  component: function TreeRootRoute() {
+    const { owner, name } = repoLayoutRoute.useParams();
+    const { ref } = treeRootRoute.useParams();
+    return (
+      <Suspend>
+        <CodeBrowserPage
+          owner={owner}
+          name={name}
+          refName={ref}
+          path=""
+          mode="tree"
+        />
+      </Suspend>
+    );
+  },
+});
+
+/** Tree under a path — e.g. /owner/repo/tree/main/src/lib */
 const treeRoute = createRoute({
   getParentRoute: () => repoLayoutRoute,
   path: '/tree/$ref/$',
@@ -315,6 +337,7 @@ const routeTree = rootRoute.addChildren([
   userRoute,
   repoLayoutRoute.addChildren([
     repoIndexRoute,
+    treeRootRoute,
     treeRoute,
     blobRoute,
     issuesRoute,

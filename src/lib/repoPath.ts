@@ -65,8 +65,9 @@ export function isPathExpression(q: string): boolean {
     return false;
   }
   if (t.startsWith('.') || t.includes('..')) return true;
-  // absolute in-repo: /src/foo (not /search)
+  // absolute in-repo: / or /src/foo (not /search)
   if (t.startsWith('/')) {
+    if (t === '/') return true;
     const first = t.slice(1).split('/')[0]?.toLowerCase() ?? '';
     if (['code', 'issues', 'prs', 'pulls', 'search', 's'].includes(first)) {
       return false;
@@ -99,11 +100,15 @@ export function appPathForObject(
   path: string,
   kind: 'blob' | 'tree',
 ): string {
-  const base = `/${owner}/${name}/${kind}/${encodeURIComponent(refName)}`;
-  if (!path) return kind === 'tree' ? base : base;
+  const ref = encodeURIComponent(refName);
+  // Repo root: tree has a dedicated route without splat; empty blob is invalid → repo home
+  if (!path) {
+    if (kind === 'tree') return `/${owner}/${name}/tree/${ref}`;
+    return `/${owner}/${name}`;
+  }
   const enc = path
     .split('/')
     .map((s) => encodeURIComponent(s))
     .join('/');
-  return `${base}/${enc}`;
+  return `/${owner}/${name}/${kind}/${ref}/${enc}`;
 }

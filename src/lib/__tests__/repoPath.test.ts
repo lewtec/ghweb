@@ -55,5 +55,15 @@ describe('appPathForObject', () => {
     expect(appPathForObject('o', 'r', 'main', '', 'tree')).toBe(
       '/o/r/tree/main',
     );
+    expect(appPathForObject('o', 'r', 'main', 'src', 'tree')).toBe(
+      '/o/r/tree/main/src',
+    );
+  });
+
+  it('resolves .. to project root path', () => {
+    expect(resolveRepoPath('src/lib', '../..')).toBe('');
+    expect(appPathForObject('o', 'r', 'main', '', 'tree')).toBe(
+      '/o/r/tree/main',
+    );
   });
 });
