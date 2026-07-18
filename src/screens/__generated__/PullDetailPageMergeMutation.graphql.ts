@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<a349b830f8f8eb620cca615b28c11fe4>>
+ * @generated SignedSource<<28d5a7d33a405d27ebf8e05ec236bea5>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -10,9 +10,11 @@
 
 import { ConcreteRequest } from 'relay-runtime';
 export type MergeableState = "CONFLICTING" | "MERGEABLE" | "UNKNOWN" | "%future added value";
+export type PullRequestMergeMethod = "MERGE" | "REBASE" | "SQUASH" | "%future added value";
 export type PullRequestState = "CLOSED" | "MERGED" | "OPEN" | "%future added value";
 export type PullDetailPageMergeMutation$variables = {
   id: string;
+  mergeMethod: PullRequestMergeMethod;
 };
 export type PullDetailPageMergeMutation$data = {
   readonly mergePullRequest: {
@@ -35,6 +37,11 @@ var v0 = [
     "defaultValue": null,
     "kind": "LocalArgument",
     "name": "id"
+  },
+  {
+    "defaultValue": null,
+    "kind": "LocalArgument",
+    "name": "mergeMethod"
   }
 ],
 v1 = [
@@ -44,9 +51,9 @@ v1 = [
       {
         "fields": [
           {
-            "kind": "Literal",
+            "kind": "Variable",
             "name": "mergeMethod",
-            "value": "SQUASH"
+            "variableName": "mergeMethod"
           },
           {
             "kind": "Variable",
@@ -124,16 +131,16 @@ return {
     "selections": (v1/*: any*/)
   },
   "params": {
-    "cacheID": "c0b936a4e9e57dd90672f6376e69a9cf",
+    "cacheID": "09dc433cc1ff049eb65d7de5e132464e",
     "id": null,
     "metadata": {},
     "name": "PullDetailPageMergeMutation",
     "operationKind": "mutation",
-    "text": "mutation PullDetailPageMergeMutation(\n  $id: ID!\n) {\n  mergePullRequest(input: {pullRequestId: $id, mergeMethod: SQUASH}) {\n    pullRequest {\n      id\n      state\n      merged\n      mergeable\n    }\n  }\n}\n"
+    "text": "mutation PullDetailPageMergeMutation(\n  $id: ID!\n  $mergeMethod: PullRequestMergeMethod!\n) {\n  mergePullRequest(input: {pullRequestId: $id, mergeMethod: $mergeMethod}) {\n    pullRequest {\n      id\n      state\n      merged\n      mergeable\n    }\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "498c83499539355cb8a26be4667f7321";
+(node as any).hash = "1eb4d04cd6d4e4a64b8288fa0d4cbd94";
 
 export default node;

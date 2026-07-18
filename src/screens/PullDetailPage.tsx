@@ -26,6 +26,10 @@ const PullFilesDiff = lazy(() =>
 const query = graphql`
   query PullDetailPageQuery($owner: String!, $name: String!, $number: Int!) {
     repository(owner: $owner, name: $name) {
+      mergeCommitAllowed
+      squashMergeAllowed
+      rebaseMergeAllowed
+      viewerDefaultMergeMethod
       pullRequest(number: $number) {
         id
         number
@@ -88,8 +92,13 @@ const query = graphql`
 `;
 
 const mergeMutation = graphql`
-  mutation PullDetailPageMergeMutation($id: ID!) {
-    mergePullRequest(input: { pullRequestId: $id, mergeMethod: SQUASH }) {
+  mutation PullDetailPageMergeMutation(
+    $id: ID!
+    $mergeMethod: PullRequestMergeMethod!
+  ) {
+    mergePullRequest(
+      input: { pullRequestId: $id, mergeMethod: $mergeMethod }
+    ) {
       pullRequest {
         id
         state
@@ -136,6 +145,19 @@ const reviewMutation = graphql`
 
 type Props = { owner: string; name: string; number: number };
 type Tab = 'conversation' | 'files';
+type MergeMethod = 'MERGE' | 'SQUASH' | 'REBASE';
+
+const MERGE_LABELS: Record<MergeMethod, string> = {
+  MERGE: 'Create a merge commit',
+  SQUASH: 'Squash and merge',
+  REBASE: 'Rebase and merge',
+};
+
+const MERGE_SHORT: Record<MergeMethod, string> = {
+  MERGE: 'Merge',
+  SQUASH: 'Squash',
+  REBASE: 'Rebase',
+};
 
 export function PullDetailPage({ owner, name, number }: Props) {
   const toast = useToast();
@@ -152,10 +174,12 @@ export function PullDetailPage({ owner, name, number }: Props) {
     }).toPromise();
   };
 
-  const pr = data.repository?.pullRequest;
+  const repo = data.repository;
+  const pr = repo?.pullRequest;
   const [tab, setTab] = useState<Tab>('conversation');
   const [reviewBody, setReviewBody] = useState('');
   const [merging, setMerging] = useState(false);
+  const [mergeMethod, setMergeMethod] = useState<MergeMethod | null>(null);
 
   const [commitMerge, mergeInFlight] =
     useMutation<PullDetailPageMergeMutation>(mergeMutation);
@@ -191,6 +215,22 @@ export function PullDetailPage({ owner, name, number }: Props) {
       })) ?? [];
 
   const canReview = !pr.merged && pr.state === 'OPEN';
+
+  const allowedMethods: MergeMethod[] = (
+    [
+      repo?.mergeCommitAllowed ? 'MERGE' : null,
+      repo?.squashMergeAllowed ? 'SQUASH' : null,
+      repo?.rebaseMergeAllowed ? 'REBASE' : null,
+    ] as const
+  ).filter((m): m is MergeMethod => m != null);
+
+  const defaultMethod: MergeMethod =
+    (repo?.viewerDefaultMergeMethod as MergeMethod | undefined) &&
+    allowedMethods.includes(repo.viewerDefaultMergeMethod as MergeMethod)
+      ? (repo.viewerDefaultMergeMethod as MergeMethod)
+      : (allowedMethods[0] ?? 'MERGE');
+
+  const activeMergeMethod = mergeMethod ?? defaultMethod;
 
   return (
     <div
@@ -355,17 +395,47 @@ export function PullDetailPage({ owner, name, number }: Props) {
         )}
       </div>
 
-      <div className="sticky bottom-0 border-t border-base-300 bg-base-100 p-2 flex flex-wrap gap-2">
+      <div className="sticky bottom-0 border-t border-base-300 bg-base-100 p-2 flex flex-wrap gap-2 items-center">
         {!pr.merged && pr.state === 'OPEN' ? (
           <>
+            {allowedMethods.length > 0 ? (
+              <label className="flex items-center gap-1 text-xs">
+                <span className="opacity-60 hidden sm:inline">Strategy</span>
+                <select
+                  className="select select-bordered select-sm max-w-[14rem]"
+                  value={activeMergeMethod}
+                  disabled={mergeInFlight || merging}
+                  onChange={(e) =>
+                    setMergeMethod(e.target.value as MergeMethod)
+                  }
+                  aria-label="Merge strategy"
+                >
+                  {allowedMethods.map((m) => (
+                    <option key={m} value={m}>
+                      {MERGE_LABELS[m]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <span className="text-xs opacity-60">No merge methods enabled</span>
+            )}
             <button
               type="button"
               className="btn btn-sm btn-primary"
-              disabled={mergeInFlight || pr.mergeable === 'CONFLICTING'}
+              disabled={
+                mergeInFlight ||
+                merging ||
+                pr.mergeable === 'CONFLICTING' ||
+                allowedMethods.length === 0
+              }
               onClick={() => {
                 setMerging(true);
                 commitMerge({
-                  variables: { id: pr.id },
+                  variables: {
+                    id: pr.id,
+                    mergeMethod: activeMergeMethod,
+                  },
                   optimisticResponse: {
                     mergePullRequest: {
                       pullRequest: {
@@ -379,7 +449,7 @@ export function PullDetailPage({ owner, name, number }: Props) {
                   onCompleted: (res) => {
                     setMerging(false);
                     if (res.mergePullRequest?.pullRequest?.merged) {
-                      toast.info('Merged');
+                      toast.info(`Merged (${MERGE_SHORT[activeMergeMethod]})`);
                     } else {
                       toast.info('Merge completed');
                     }
@@ -391,7 +461,9 @@ export function PullDetailPage({ owner, name, number }: Props) {
                 });
               }}
             >
-              {mergeInFlight || merging ? 'Merging…' : 'Squash merge'}
+              {mergeInFlight || merging
+                ? 'Merging…'
+                : MERGE_SHORT[activeMergeMethod]}
             </button>
             <button
               type="button"
