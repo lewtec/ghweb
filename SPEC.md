@@ -59,7 +59,7 @@ Auth model assumes a user who can create a PAT (same mental model as `gh auth to
 | **Issues** | **Power triage** — view + broad writes (see §5.3) |
 | **Pull requests** | **Power triage** — conversation, files (read), reviews, merge when allowed |
 | **Search** | **GraphQL `search` only** — repos, issues, PRs, users/orgs (types the schema supports well). No v1 code search |
-| **Chrome** | Avatar (viewer), sidebar, full responsive layout, command palette |
+| **Chrome** | Avatar (viewer), **breadcrumb** `gitweb > owner/repo` + code/issues/PRs icons (no sidebar), command palette (`/code` `/issues` `/prs`) |
 
 ### 5.2 Later (roadmap, not v1 gates)
 
@@ -450,7 +450,8 @@ Decisions locked in the 2026-07 grill session:
 16. mise: `codegen:schema`, `codegen:relay`, `codegen`→`codegen:*`; `format`/`lint` → **workspaced codebase format/lint**; `ci`; weekly schema PR; **no husky**  
 17. Diff UI: `@git-diff-view/react` (confirmed); library vs own split per §8.2
 18. External links open in a **new tab**
-19. PR **Files** tab is full-width; line/hunk comments via DiffView widgets + review threads (`target=_blank` + `noopener noreferrer`)  
+19. PR **Files** tab is full-width
+20. Chrome: breadcrumb + section icons; no sidebar; ⌘K slash commands; line/hunk comments via DiffView widgets + review threads (`target=_blank` + `noopener noreferrer`)  
 
 ---
 

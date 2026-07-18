@@ -7,10 +7,10 @@ import {
 import { Suspense, lazy, useState, type ReactNode } from 'react';
 import { SimpleErrorBoundary } from '@/components/SimpleErrorBoundary';
 import { TopBar } from '@/components/TopBar';
-import { RepoSideNav } from '@/components/RepoSideNav';
 import { CommandPalette } from '@/components/CommandPalette';
 import { LoadingBlock } from '@/components/LoadingBlock';
 import { graphql, useLazyLoadQuery } from 'react-relay';
+import type { routerViewerQuery } from './__generated__/routerViewerQuery.graphql';
 
 const HomePage = lazy(() =>
   import('@/screens/HomePage').then((m) => ({ default: m.HomePage })),
@@ -44,7 +44,6 @@ const PullDetailPage = lazy(() =>
 const SearchPage = lazy(() =>
   import('@/screens/SearchPage').then((m) => ({ default: m.SearchPage })),
 );
-import type { routerViewerQuery } from './__generated__/routerViewerQuery.graphql';
 
 const viewerQuery = graphql`
   query routerViewerQuery {
@@ -55,37 +54,22 @@ const viewerQuery = graphql`
   }
 `;
 
-function ViewerChrome(props: {
-  children: ReactNode;
-  contextLabel?: string;
-  repo?: { owner: string; name: string };
-}) {
+function ViewerChrome({ children }: { children: ReactNode }) {
   return (
     <Suspense fallback={<LoadingBlock label="Loading session…" />}>
-      <ViewerChromeInner {...props} />
+      <ViewerChromeInner>{children}</ViewerChromeInner>
     </Suspense>
   );
 }
 
-function ViewerChromeInner({
-  children,
-  contextLabel,
-  repo,
-}: {
-  children: ReactNode;
-  contextLabel?: string;
-  repo?: { owner: string; name: string };
-}) {
+function ViewerChromeInner({ children }: { children: ReactNode }) {
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const viewer = useLazyLoadQuery<routerViewerQuery>(viewerQuery, {});
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col w-full min-w-0">
       <TopBar
         onOpenPalette={() => setPaletteOpen(true)}
-        onOpenNav={repo ? () => setDrawerOpen(true) : undefined}
-        contextLabel={contextLabel}
         viewerLogin={viewer.viewer.login}
         viewerAvatarUrl={viewer.viewer.avatarUrl}
         signedIn
@@ -94,47 +78,11 @@ function ViewerChromeInner({
         }}
       />
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
-
-      <div className="flex flex-1 min-h-0">
-        {repo ? (
-          <>
-            <aside className="hidden md:block w-44 shrink-0 border-r border-base-300 bg-base-200/50">
-              <RepoSideNav owner={repo.owner} name={repo.name} />
-            </aside>
-            {drawerOpen ? (
-              <div className="md:hidden fixed inset-0 z-50 flex">
-                <aside className="w-56 bg-base-100 border-r border-base-300 shadow-lg">
-                  <div className="p-2 flex justify-end">
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-ghost"
-                      onClick={() => setDrawerOpen(false)}
-                    >
-                      Close
-                    </button>
-                  </div>
-                  <RepoSideNav
-                    owner={repo.owner}
-                    name={repo.name}
-                    className="pb-8"
-                  />
-                </aside>
-                <button
-                  type="button"
-                  className="flex-1 bg-black/40"
-                  aria-label="Close drawer"
-                  onClick={() => setDrawerOpen(false)}
-                />
-              </div>
-            ) : null}
-          </>
-        ) : null}
-        <main className="flex-1 min-w-0 overflow-auto">
-          <Suspense fallback={<LoadingBlock />}>
-            <SimpleErrorBoundary>{children}</SimpleErrorBoundary>
-          </Suspense>
-        </main>
-      </div>
+      <main className="flex-1 min-w-0 overflow-auto w-full">
+        <Suspense fallback={<LoadingBlock />}>
+          <SimpleErrorBoundary>{children}</SimpleErrorBoundary>
+        </Suspense>
+      </main>
     </div>
   );
 }
@@ -181,12 +129,8 @@ const repoLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/$owner/$name',
   component: function RepoLayout() {
-    const { owner, name } = repoLayoutRoute.useParams();
     return (
-      <ViewerChrome
-        contextLabel={`${owner}/${name}`}
-        repo={{ owner, name }}
-      >
+      <ViewerChrome>
         <Outlet />
       </ViewerChrome>
     );
@@ -269,11 +213,7 @@ const issueDetailRoute = createRoute({
     const { number } = issueDetailRoute.useParams();
     return (
       <Suspend>
-        <IssueDetailPage
-          owner={owner}
-          name={name}
-          number={Number(number)}
-        />
+        <IssueDetailPage owner={owner} name={name} number={Number(number)} />
       </Suspend>
     );
   },
@@ -330,7 +270,6 @@ const pullFilesRoute = createRoute({
   },
 });
 
-// github: /pulls list + /pull/:n conversation + /pull/:n/files
 const routeTree = rootRoute.addChildren([
   indexRoute,
   searchRoute,
