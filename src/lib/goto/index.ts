@@ -12,3 +12,4 @@ export { parseSlashCommand } from './slash';
 export { defaultProviders } from './providers';
 export { pathProvider } from './pathProvider';
 export { suggestPaths, completionContext } from './pathSuggest';
+export { tabCompleteQuery, expandSlash } from './tabComplete';

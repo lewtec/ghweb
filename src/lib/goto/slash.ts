@@ -5,7 +5,7 @@ export type SlashCommand = {
   rest: string;
 };
 
-const ALIASES: Record<string, SlashCommand['cmd']> = {
+export const ALIASES: Record<string, SlashCommand['cmd']> = {
   code: 'code',
   issues: 'issues',
   issue: 'issues',

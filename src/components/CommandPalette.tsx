@@ -16,6 +16,7 @@ import {
   executeGoto,
   groupCandidates,
   suggestPaths,
+  tabCompleteQuery,
   type GotoCandidate,
   type GotoIcon,
 } from '@/lib/goto';
@@ -151,6 +152,14 @@ export function CommandPalette({ open, onOpenChange }: Props) {
     }
   };
 
+  const onTabComplete = (e: React.KeyboardEvent) => {
+    if (e.key !== 'Tab' || e.altKey || e.metaKey || e.ctrlKey) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const next = tabCompleteQuery(q, items, selected);
+    if (next != null) setQ(next);
+  };
+
   return (
     <div className="modal modal-open">
       <div className="modal-box p-0 overflow-hidden w-full max-w-lg">
@@ -160,16 +169,16 @@ export function CommandPalette({ open, onOpenChange }: Props) {
           shouldFilter={false}
           value={selected}
           onValueChange={setSelected}
-          // Remount item tree identity when list identity shifts so selection applies
           loop
         >
           <Command.Input
             value={q}
             onValueChange={setQ}
+            onKeyDown={onTabComplete}
             placeholder={
               ctx.pathNav
-                ? 'Path autocomplete: src  DESIGN  ../  ·  /code · owner/repo'
-                : '/code /issues /prs  ·  owner/repo  ·  search…'
+                ? 'Tab expands path · /pr → PRs  ·  Enter opens'
+                : 'Tab expands /pr /issues  ·  Enter opens  ·  owner/repo'
             }
             className="input input-bordered w-full rounded-none border-0 border-b border-base-300 focus:outline-none"
             autoFocus
