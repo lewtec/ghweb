@@ -4,17 +4,17 @@
   themes: light --default, dark --prefersdark;
 }
 
-/* Linear-ish density helpers */
+/* Density: padding scales with rem; more room below md via max-width query in rem */
 .dense-list {
   @apply text-sm leading-snug;
 }
 .dense-list li,
 .dense-row {
-  @apply py-1.5 px-2;
+  @apply py-[0.375rem] px-[0.5rem];
 }
-@media (max-width: 767px) {
+@media (max-width: 48rem) {
   .dense-list,
   .dense-row {
-    @apply py-2.5 text-base leading-normal;
+    @apply py-[0.625rem] text-base leading-normal;
   }
 }

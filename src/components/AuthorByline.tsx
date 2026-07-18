@@ -27,45 +27,43 @@ export function AuthorByline({
   const login = author?.login ?? 'ghost';
   const name = author?.name?.trim() || null;
   const avatar = author?.avatarUrl ?? null;
-  const px = size === 'md' ? 'w-10 h-10' : 'w-7 h-7';
+  // rem-based avatar via size utilities (1rem = 16px default)
+  const px = size === 'md' ? 'size-10' : 'size-7';
   const text = size === 'md' ? 'text-sm' : 'text-xs';
 
   return (
-    <div className={cn('flex items-center gap-2 min-w-0', className)}>
+    <div className={cn('flex items-center gap-2 min-w-0 w-full', className)}>
       <div className={cn('avatar shrink-0', !avatar && 'placeholder')}>
         <div
-          className={cn(
-            'rounded-full bg-neutral text-neutral-content',
-            px,
-          )}
+          className={cn('rounded-full bg-neutral text-neutral-content', px)}
         >
           {avatar ? (
-            <img src={avatar} alt="" />
+            <img src={avatar} alt="" className="size-full object-cover" />
           ) : (
-            <span className="text-[10px]">{login[0]?.toUpperCase() ?? '?'}</span>
+            <span className="text-[0.65em]">
+              {login[0]?.toUpperCase() ?? '?'}
+            </span>
           )}
         </div>
       </div>
-      <div className={cn('min-w-0 leading-tight', text)}>
-        <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0">
+      <div className={cn('min-w-0 flex-1 leading-tight', text)}>
+        <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0 min-w-0">
           {name ? (
-            <span className="font-medium truncate max-w-[12rem]">{name}</span>
+            <span className="font-medium truncate min-w-0 max-w-[min(100%,12ch)] sm:max-w-[min(100%,20ch)]">
+              {name}
+            </span>
           ) : null}
-          <span className={cn('truncate', name ? 'opacity-60' : 'font-medium')}>
+          <span
+            className={cn(
+              'truncate min-w-0',
+              name ? 'opacity-60' : 'font-medium',
+            )}
+          >
             @{login}
           </span>
         </div>
-        {meta ? <div className="opacity-50 truncate">{meta}</div> : null}
+        {meta ? <div className="opacity-50 truncate min-w-0">{meta}</div> : null}
       </div>
     </div>
   );
 }
-
-/** GraphQL selection for Actor + User.name (paste into author { ... }). */
-export const AUTHOR_FIELDS = `
-  login
-  avatarUrl(size: 48)
-  ... on User {
-    name
-  }
-`;

@@ -43,7 +43,7 @@ export function IssuesListPage({ owner, name }: Props) {
   const issues = data.repository?.issues.nodes ?? [];
 
   return (
-    <div className="p-3 md:p-4 w-full">
+    <div className="w-full min-w-0 p-[clamp(0.75rem,2vw,1.25rem)]">
       <h1 className="text-lg font-semibold mb-3">Issues</h1>
       <ul className="card bg-base-100 border border-base-300 divide-y divide-base-300 dense-list">
         {issues.map((issue) => {

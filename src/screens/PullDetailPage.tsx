@@ -260,7 +260,7 @@ export function PullDetailPage({
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-3rem)] w-full">
-      <div className="p-3 md:p-4 space-y-3 flex-1 pb-24 w-full">
+      <div className="w-full min-w-0 flex-1 space-y-3 p-[clamp(0.75rem,2vw,1.25rem)] pb-[max(4rem,6vh)]">
         {/* Header + tabs: always full content width (same on conversation and files) */}
         <div className="flex items-start gap-2 w-full">
           <h1 className="text-xl font-semibold min-w-0 flex-1">
@@ -313,7 +313,7 @@ export function PullDetailPage({
             />
           </Suspense>
         ) : (
-          <div className="max-w-3xl w-full mx-auto space-y-3">
+          <div className="w-full max-w-[min(100%,48rem)] mx-auto space-y-3 min-w-0">
             <div className="border border-base-300 rounded-box p-3">
               <div className="mb-2">
                 <AuthorByline
