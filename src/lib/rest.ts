@@ -199,3 +199,51 @@ export async function renderMarkdownGfm(
   }
   return res.text();
 }
+
+/**
+ * Job logs for a GitHub Actions check run / job (REST — GraphQL has no log body).
+ * Follows redirects to the signed log URL. Returns plain text (may be large).
+ */
+export async function fetchActionsJobLogs(
+  owner: string,
+  repo: string,
+  jobId: number,
+): Promise<string> {
+  const token = getToken();
+  if (!token) throw new Error('Not signed in');
+
+  const res = await fetch(
+    `${API}/repos/${owner}/${repo}/actions/jobs/${jobId}/logs`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+      redirect: 'follow',
+    },
+  );
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Job logs ${res.status}: ${body.slice(0, 300)}`);
+  }
+  const text = await res.text();
+  // Cap display size in callers; still return full for streaming re-fetch
+  return text;
+}
+
+/** GitHub Actions UI for a workflow run (gap stubs). */
+export function githubActionsRunUrl(
+  owner: string,
+  repo: string,
+  runDatabaseId: number | null | undefined,
+): string {
+  if (runDatabaseId != null) {
+    return `https://github.com/${owner}/${repo}/actions/runs/${runDatabaseId}`;
+  }
+  return `https://github.com/${owner}/${repo}/actions`;
+}
+
+export function githubActionsHomeUrl(owner: string, repo: string): string {
+  return `https://github.com/${owner}/${repo}/actions`;
+}

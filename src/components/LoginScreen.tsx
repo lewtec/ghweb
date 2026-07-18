@@ -50,9 +50,9 @@ export function LoginScreen({ onSignedIn }: Props) {
             Continue
           </button>
           <p className="text-xs opacity-60">
-            Recommended scopes for v1: <code>repo</code>, <code>read:org</code>,{' '}
-            <code>read:user</code>. Fine-grained tokens need repo + metadata
-            access for the orgs you use.
+            Recommended scopes: <code>repo</code>, <code>read:org</code>,{' '}
+            <code>read:user</code>, <code>workflow</code> (Actions logs /
+            deploy reviews). Fine-grained: repo + Actions read/write as needed.
           </p>
         </div>
       </div>

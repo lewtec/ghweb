@@ -43,6 +43,16 @@ const PullDetailPage = lazy(() =>
     default: m.PullDetailPage,
   })),
 );
+const ActionsListPage = lazy(() =>
+  import('@/screens/ActionsListPage').then((m) => ({
+    default: m.ActionsListPage,
+  })),
+);
+const ActionsRunPage = lazy(() =>
+  import('@/screens/ActionsRunPage').then((m) => ({
+    default: m.ActionsRunPage,
+  })),
+);
 const SearchPage = lazy(() =>
   import('@/screens/SearchPage').then((m) => ({ default: m.SearchPage })),
 );
@@ -345,6 +355,37 @@ const pullFilesRoute = createRoute({
   },
 });
 
+const actionsRoute = createRoute({
+  getParentRoute: () => repoLayoutRoute,
+  path: '/actions',
+  component: function ActionsRoute() {
+    const { owner, name } = repoLayoutRoute.useParams();
+    return (
+      <Suspend>
+        <ActionsListPage owner={owner} name={name} />
+      </Suspend>
+    );
+  },
+});
+
+const actionsRunRoute = createRoute({
+  getParentRoute: () => repoLayoutRoute,
+  path: '/actions/runs/$runId',
+  component: function ActionsRunRoute() {
+    const { owner, name } = repoLayoutRoute.useParams();
+    const { runId } = actionsRunRoute.useParams();
+    return (
+      <Suspend>
+        <ActionsRunPage
+          owner={owner}
+          name={name}
+          runId={decodeURIComponent(runId)}
+        />
+      </Suspend>
+    );
+  },
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   searchRoute,
@@ -359,6 +400,8 @@ const routeTree = rootRoute.addChildren([
     pullsRoute,
     pullDetailRoute,
     pullFilesRoute,
+    actionsRoute,
+    actionsRunRoute,
   ]),
 ]);
 

@@ -146,7 +146,11 @@ export function isPathExpression(
   if (t.startsWith('/')) {
     if (t === '/') return true;
     const first = t.slice(1).split('/')[0]?.toLowerCase() ?? '';
-    if (['code', 'issues', 'prs', 'pulls', 'search', 's'].includes(first)) {
+    if (
+      ['code', 'issues', 'prs', 'pulls', 'actions', 'search', 's'].includes(
+        first,
+      )
+    ) {
       return false;
     }
     return true;

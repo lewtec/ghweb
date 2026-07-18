@@ -7,16 +7,34 @@ import {
 import type { Variables } from 'relay-runtime';
 
 const DETAIL_POLL_MS = 45_000;
+/** While Actions/checks are in progress — closer to github.com feel */
+const ACTIVE_POLL_MS = 4_000;
+
+export type LiveQueryOptions = {
+  enabled?: boolean;
+  /**
+   * When true, poll every ~4s (GitHub-like). When false/undefined, ~45s.
+   * Typically: any check suite/run still queued or in progress.
+   */
+  active?: boolean;
+};
 
 /**
- * Focus refetch + slow poll for open issue/PR conversation screens.
- * Does not fetch on mount (caller already has data via useLazyLoadQuery).
+ * Focus refetch + poll. Does not fetch on mount (caller already has data).
+ * Use `active` for Actions/run pages while work is in flight.
  */
 export function useLiveQuery(
   query: GraphQLTaggedNode,
   variables: Variables,
-  enabled = true,
+  enabledOrOptions: boolean | LiveQueryOptions = true,
 ): void {
+  const opts: LiveQueryOptions =
+    typeof enabledOrOptions === 'boolean'
+      ? { enabled: enabledOrOptions }
+      : enabledOrOptions;
+  const enabled = opts.enabled !== false;
+  const active = opts.active === true;
+
   const env = useRelayEnvironment();
   const varsRef = useRef(variables);
   varsRef.current = variables;
@@ -36,14 +54,15 @@ export function useLiveQuery(
 
     document.addEventListener('visibilitychange', onFocus);
     window.addEventListener('focus', onFocus);
+    const interval = active ? ACTIVE_POLL_MS : DETAIL_POLL_MS;
     const id = window.setInterval(() => {
       if (document.visibilityState === 'visible') run();
-    }, DETAIL_POLL_MS);
+    }, interval);
 
     return () => {
       document.removeEventListener('visibilitychange', onFocus);
       window.removeEventListener('focus', onFocus);
       window.clearInterval(id);
     };
-  }, [env, query, enabled]);
+  }, [env, query, enabled, active]);
 }

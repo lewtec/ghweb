@@ -27,6 +27,7 @@ import { AuthorByline } from '@/components/AuthorByline';
 import { GithubMarkdown } from '@/components/GithubMarkdown';
 import { PrStateBadge } from '@/components/PrStateBadge';
 import { ReviewStateBadge } from '@/components/ReviewStateBadge';
+import { PrChecksStrip } from '@/components/PrChecksStrip';
 
 const PullFilesDiff = lazy(() =>
   import('@/components/PullFilesDiff').then((m) => ({
@@ -811,6 +812,8 @@ export function PullDetailPage({
               </div>
               <GithubMarkdown html={pr.bodyHTML} text={pr.body} />
             </div>
+
+            <PrChecksStrip owner={owner} name={name} number={number} />
 
             <div>
               <div className="text-xs font-medium opacity-60 mb-1">Reviews</div>

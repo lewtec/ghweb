@@ -52,6 +52,16 @@ function sectionCandidates(
       priority: priority + 2,
       action: { kind: 'navigate', to: `${base}/pulls` },
     },
+    {
+      id: `actions-${here}`,
+      label: `Actions · ${here}`,
+      hint: '/actions',
+      value: `actions action ci workflows ${here} /actions`,
+      group,
+      icon: 'actions',
+      priority: priority + 3,
+      action: { kind: 'navigate', to: `${base}/actions` },
+    },
   ];
 }
 
@@ -69,7 +79,10 @@ export const hereSectionProvider: GotoProvider = (q, ctx) => {
     if (slash.cmd === 'search') return [];
     return all.filter((c) => {
       const section =
-        c.icon === 'code' || c.icon === 'issues' || c.icon === 'prs'
+        c.icon === 'code' ||
+        c.icon === 'issues' ||
+        c.icon === 'prs' ||
+        c.icon === 'actions'
           ? c.icon
           : null;
       return section != null && slashMatches(slash, section);
@@ -88,7 +101,10 @@ export const jumpSectionProvider: GotoProvider = (q, ctx) => {
     const base = sectionCandidates(r.owner, r.name, GROUP.jump, 30);
     return base.filter((c) => {
       const section =
-        c.icon === 'code' || c.icon === 'issues' || c.icon === 'prs'
+        c.icon === 'code' ||
+        c.icon === 'issues' ||
+        c.icon === 'prs' ||
+        c.icon === 'actions'
           ? c.icon
           : null;
       return section != null && slashMatches(slash, section);

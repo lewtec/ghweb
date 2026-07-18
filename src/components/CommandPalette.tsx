@@ -15,6 +15,7 @@ import {
   GitPullRequest,
   Home,
   Search,
+  Workflow,
   type LucideIcon,
 } from 'lucide-react';
 import {
@@ -39,6 +40,7 @@ const ICONS: Record<GotoIcon, LucideIcon> = {
   code: Code2,
   issues: CircleDot,
   prs: GitPullRequest,
+  actions: Workflow,
   path: FileCode2,
   home: Home,
   search: Search,

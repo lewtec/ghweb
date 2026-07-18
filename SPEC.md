@@ -42,7 +42,8 @@ It is a **tool to get things done**, not a marketing clone of GitHub. North star
 |------|------|
 | Primary | Developers who live in issues/PRs/review and want a faster, denser client |
 | Secondary | Maintainers doing power triage (labels, assignees, merge strategies, reviews) |
-| Non-target (v1) | Org admins configuring SSO/billing; CI engineers needing full Actions consoles |
+| Also | Developers watching **Actions** checks/runs (GraphQL-first console; not org SSO/billing admins) |
+| Non-target | Org admins configuring SSO/billing; self-hosted runner fleets; secrets/vars admin UIs |
 
 Auth model assumes a user who can create a PAT (same mental model as `gh auth token`). **No guest mode** — if GraphQL cannot run without credentials, unauthenticated access is discarded entirely (no REST guest fallback, no shared proxy token for “public browse”).
 
@@ -60,11 +61,12 @@ Auth model assumes a user who can create a PAT (same mental model as `gh auth to
 | **Issues** | **Power triage** — view + broad writes (see §5.3) |
 | **Pull requests** | **Power triage** — conversation, files (read), reviews, merge when allowed |
 | **Search** | **GraphQL `search` only** — repos, issues, PRs, users/orgs (types the schema supports well). No v1 code search |
-| **Chrome** | Avatar (viewer), **breadcrumb** `ghweb > owner/repo` + code/issues/PRs icons (no sidebar), command palette (`/code` `/issues` `/prs`) |
+| **Chrome** | Avatar (viewer), **breadcrumb** `ghweb > owner/repo` + code/issues/PRs/**Actions** icons (no sidebar), command palette (`/code` `/issues` `/prs` `/actions`) |
+| **Actions** | **GraphQL-first console** — see §5.4 |
 
 ### 5.2 Later (roadmap, not v1 gates)
 
-- Actions (REST hybrid)
+- Actions **gap fill** (cancel/re-run/dispatch/secrets when product allows REST or schema grows)
 - Discussions
 - Notifications inbox polish
 - Code search (REST)
@@ -72,6 +74,22 @@ Auth model assumes a user who can create a PAT (same mental model as `gh auth to
 - Configurable GitHub host (GHE)
 - Device-flow login (optional comfort upgrade over PAT paste)
 - Light web edit/commit (only after read-only code + triage are solid)
+
+### 5.4 Actions (GraphQL-first console)
+
+**Intent:** Full console UX in the same density as Issues/PRs, not a toy list.
+
+| Decision | Choice |
+|----------|--------|
+| API | **GraphQL** for all runs/checks/steps/annotations/deploy gates that the schema supports |
+| Gaps | **Show affordance → Open on GitHub** (re-run, cancel, workflow_dispatch, secrets, runners, perfect global run index). Go deep later. |
+| Routes | `/owner/repo/actions` list · `/owner/repo/actions/runs/$runId` detail (`runId` = GraphQL node id) · TopBar + ⌘K `/actions` · **PR checks strip** deep-links into the same detail |
+| Live | **GitHub-like:** fast poll while any check/run is non-terminal; slow when idle; pause when tab hidden; focus refetch |
+| Logs | **Low-hanging REST** for job log text (`GET …/actions/jobs/{id}/logs`) + re-fetch while job in progress (not true server SSE). GQL has no step log body. |
+| Writes (GQL) | `approveDeployments` / `rejectDeployments` / `rerequestCheckSuite` when the viewer can |
+| Discovery | No `Repository.workflows` for Actions in GraphQL — list is **best-effort** from recent default-branch commits + open PR head check suites; empty states link to GitHub |
+
+**Not in scope (gap stubs or omit):** org/repo Actions secrets & variables UI, self-hosted runners admin, usage billing, artifact browser, true log multiplexing/streaming APIs.
 
 ### 5.3 Power triage (issues & PRs)
 
@@ -413,7 +431,8 @@ A v1 cut is “done” when:
 | **4** | Read-only code browser |
 | **5** | GraphQL search + command palette + github.com URL import |
 | **6** | Focus refetch + conversation poll; rate-limit banners; polish |
-| **∞** | impeccable visual pass; Actions; discussions; device flow; GHE |
+| **7** | Actions GraphQL console (list/detail, PR checks, deploy gates, rerequest, log REST LHF, adaptive poll) |
+| **∞** | impeccable visual pass; Actions gap-fill; discussions; device flow; GHE |
 
 ---
 

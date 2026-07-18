@@ -5,6 +5,7 @@ import {
   Code2,
   GitPullRequest,
   Search,
+  Workflow,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { clearToken } from '@/lib/auth';
@@ -113,6 +114,13 @@ export function TopBar({
                   label="PRs"
                   icon={GitPullRequest}
                 />
+                <SectionLink
+                  to="/$owner/$name/actions"
+                  params={{ owner: repo.owner, name: repo.name }}
+                  active={section === 'actions'}
+                  label="Actions"
+                  icon={Workflow}
+                />
               </div>
             </>
           ) : null}
@@ -128,7 +136,7 @@ export function TopBar({
             onClick={onOpenPalette}
           >
             <Search className="size-4 shrink-0" />
-            <span className="truncate">Jump… /code /issues /prs</span>
+            <span className="truncate">Jump… /code /issues /prs /actions</span>
             <kbd className="kbd kbd-sm ms-auto hidden sm:inline-flex">⌘K</kbd>
           </button>
         </div>
@@ -222,7 +230,11 @@ function SectionLink({
   icon: Icon,
   exact,
 }: {
-  to: '/$owner/$name' | '/$owner/$name/issues' | '/$owner/$name/pulls';
+  to:
+    | '/$owner/$name'
+    | '/$owner/$name/issues'
+    | '/$owner/$name/pulls'
+    | '/$owner/$name/actions';
   params: { owner: string; name: string };
   active: boolean;
   label: string;
@@ -251,7 +263,7 @@ function SectionLink({
 function repoSection(
   pathname: string,
   repo: { owner: string; name: string } | null,
-): 'code' | 'issues' | 'prs' | null {
+): 'code' | 'issues' | 'prs' | 'actions' | null {
   if (!repo) return null;
   const base = `/${repo.owner}/${repo.name}`;
   if (pathname === base || pathname.startsWith(`${base}/tree/`) || pathname.startsWith(`${base}/blob/`)) {
@@ -264,5 +276,6 @@ function repoSection(
   ) {
     return 'prs';
   }
+  if (pathname.startsWith(`${base}/actions`)) return 'actions';
   return 'code';
 }

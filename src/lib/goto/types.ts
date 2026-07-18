@@ -30,6 +30,7 @@ export type GotoIcon =
   | 'code'
   | 'issues'
   | 'prs'
+  | 'actions'
   | 'path'
   | 'home'
   | 'search'
