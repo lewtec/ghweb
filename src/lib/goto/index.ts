@@ -11,3 +11,4 @@ export { executeGoto, type GotoExecuteDeps, type GotoExecuteResult } from './exe
 export { parseSlashCommand } from './slash';
 export { defaultProviders } from './providers';
 export { pathProvider } from './pathProvider';
+export { suggestPaths, completionContext } from './pathSuggest';

@@ -46,6 +46,90 @@ export async function fetchPullFiles(
   return out;
 }
 
+export type RepoDirEntry = {
+  name: string;
+  path: string;
+  type: 'file' | 'dir';
+};
+
+const dirCache = new Map<string, RepoDirEntry[] | null>();
+
+function contentsHeaders(): HeadersInit {
+  const token = getToken();
+  if (!token) throw new Error('Not signed in');
+  return {
+    Authorization: `Bearer ${token}`,
+    Accept: 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+  };
+}
+
+function contentsUrl(
+  owner: string,
+  repo: string,
+  ref: string,
+  path: string,
+): string {
+  if (!path) {
+    return `${API}/repos/${owner}/${repo}/contents?ref=${encodeURIComponent(ref)}`;
+  }
+  const encPath = path
+    .split('/')
+    .map((s) => encodeURIComponent(s))
+    .join('/');
+  return `${API}/repos/${owner}/${repo}/contents/${encPath}?ref=${encodeURIComponent(ref)}`;
+}
+
+/**
+ * List a directory (or null if missing / not a dir). Cached per owner/repo@ref:path.
+ */
+export async function listRepoDir(
+  owner: string,
+  repo: string,
+  ref: string,
+  dirPath: string,
+): Promise<RepoDirEntry[] | null> {
+  const key = `${owner}/${repo}@${ref}:${dirPath || '/'}`;
+  if (dirCache.has(key)) return dirCache.get(key) ?? null;
+
+  const res = await fetch(contentsUrl(owner, repo, ref, dirPath), {
+    headers: contentsHeaders(),
+  });
+  if (res.status === 404) {
+    dirCache.set(key, null);
+    return null;
+  }
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`REST contents ${res.status}: ${body.slice(0, 300)}`);
+  }
+  const data: unknown = await res.json();
+  if (!Array.isArray(data)) {
+    // path is a file, not a directory
+    dirCache.set(key, null);
+    return null;
+  }
+  const entries: RepoDirEntry[] = data
+    .map((raw) => {
+      if (!raw || typeof raw !== 'object') return null;
+      const o = raw as { name?: string; path?: string; type?: string };
+      if (!o.name || !o.path) return null;
+      if (o.type === 'dir')
+        return { name: o.name, path: o.path, type: 'dir' as const };
+      if (o.type === 'file')
+        return { name: o.name, path: o.path, type: 'file' as const };
+      return null;
+    })
+    .filter(Boolean) as RepoDirEntry[];
+
+  entries.sort((a, b) => {
+    if (a.type !== b.type) return a.type === 'dir' ? -1 : 1;
+    return a.name.localeCompare(b.name);
+  });
+  dirCache.set(key, entries);
+  return entries;
+}
+
 /**
  * Probe whether a path exists on a ref. Returns blob/tree or null if missing.
  * Empty path = repository root tree.
@@ -56,22 +140,10 @@ export async function probeRepoPath(
   ref: string,
   path: string,
 ): Promise<'blob' | 'tree' | null> {
-  const token = getToken();
-  if (!token) throw new Error('Not signed in');
-
   if (!path) return 'tree';
 
-  const encPath = path
-    .split('/')
-    .map((s) => encodeURIComponent(s))
-    .join('/');
-  const url = `${API}/repos/${owner}/${repo}/contents/${encPath}?ref=${encodeURIComponent(ref)}`;
-  const res = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-    },
+  const res = await fetch(contentsUrl(owner, repo, ref, path), {
+    headers: contentsHeaders(),
   });
   if (res.status === 404) return null;
   if (!res.ok) {

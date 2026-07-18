@@ -15,6 +15,7 @@ import {
   collectGotoCandidates,
   executeGoto,
   groupCandidates,
+  suggestPaths,
   type GotoCandidate,
   type GotoIcon,
 } from '@/lib/goto';
@@ -42,6 +43,8 @@ export function CommandPalette({ open, onOpenChange }: Props) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [q, setQ] = useState('');
   const [busy, setBusy] = useState(false);
+  const [pathItems, setPathItems] = useState<GotoCandidate[]>([]);
+  const [pathLoading, setPathLoading] = useState(false);
 
   const ctx = useMemo(() => buildGotoContext(pathname), [pathname]);
 
@@ -49,6 +52,8 @@ export function CommandPalette({ open, onOpenChange }: Props) {
     if (!open) {
       setQ('');
       setBusy(false);
+      setPathItems([]);
+      setPathLoading(false);
     }
   }, [open]);
 
@@ -64,10 +69,53 @@ export function CommandPalette({ open, onOpenChange }: Props) {
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onOpenChange]);
 
-  const items = useMemo(
+  // Debounced path autocomplete from live repo contents
+  useEffect(() => {
+    if (!open || !ctx.pathNav) {
+      setPathItems([]);
+      setPathLoading(false);
+      return;
+    }
+    const qtrim = q.trim();
+    if (!qtrim) {
+      setPathItems([]);
+      setPathLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setPathLoading(true);
+    const handle = window.setTimeout(() => {
+      void suggestPaths(ctx, qtrim)
+        .then((items) => {
+          if (!cancelled) setPathItems(items);
+        })
+        .catch(() => {
+          if (!cancelled) setPathItems([]);
+        })
+        .finally(() => {
+          if (!cancelled) setPathLoading(false);
+        });
+    }, 120);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(handle);
+    };
+  }, [open, q, ctx]);
+
+  const syncItems = useMemo(
     () => collectGotoCandidates(q, ctx),
     [q, ctx],
   );
+
+  const items = useMemo(() => {
+    // Path suggestions first, then other goto providers
+    const seen = new Set(pathItems.map((i) => i.id));
+    const rest = syncItems.filter((i) => !seen.has(i.id));
+    return [...pathItems, ...rest];
+  }, [pathItems, syncItems]);
+
   const groups = useMemo(() => groupCandidates(items), [items]);
 
   if (!open) return null;
@@ -77,7 +125,6 @@ export function CommandPalette({ open, onOpenChange }: Props) {
     setBusy(true);
     try {
       const result = await executeGoto(item.action, {
-        // Use href so absolute app paths always match (to: is route-id oriented)
         navigate: (to) => navigate({ href: to }),
         toastError: (title, detail) => toast.error(title, detail),
       });
@@ -100,7 +147,7 @@ export function CommandPalette({ open, onOpenChange }: Props) {
             onValueChange={setQ}
             placeholder={
               ctx.pathNav
-                ? 'Path: src  ../lib  ·  /code /issues  ·  owner/repo'
+                ? 'Path autocomplete: src  DESIGN  ../  ·  /code · owner/repo'
                 : '/code /issues /prs  ·  owner/repo  ·  search…'
             }
             className="input input-bordered w-full rounded-none border-0 border-b border-base-300 focus:outline-none"
@@ -109,7 +156,11 @@ export function CommandPalette({ open, onOpenChange }: Props) {
           />
           <Command.List className="max-h-[min(60vh,24rem)] overflow-auto p-2">
             <Command.Empty className="p-3 text-sm opacity-60">
-              {busy ? 'Going…' : 'No matches'}
+              {busy
+                ? 'Going…'
+                : pathLoading
+                  ? 'Loading paths…'
+                  : 'No matches'}
             </Command.Empty>
             {Object.entries(groups).map(([group, list]) => (
               <Command.Group

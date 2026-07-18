@@ -45,6 +45,8 @@ export type GotoAction =
       ref: string;
       /** '' = repository root tree */
       path: string;
+      /** Skip probe when known from directory listing */
+      knownKind?: 'blob' | 'tree';
     };
 
 export type GotoCandidate = {

@@ -1,11 +1,8 @@
 import { githubUrlToAppPath } from '@/lib/githubUrl';
 import { fuzzyMatch, type RecentRepo } from '@/lib/recentRepos';
 import { isPathExpression } from '@/lib/repoPath';
-import { pathProvider } from './pathProvider';
 import { parseSlashCommand, slashMatches } from './slash';
 import type { GotoCandidate, GotoProvider } from './types';
-
-export { pathProvider };
 
 const GROUP = {
   path: 'Path',
@@ -225,9 +222,11 @@ function filterRepos(
     .slice(0, 12);
 }
 
-/** Default provider pipeline (order = registration; priority sorts within). */
+/**
+ * Sync providers only. Path autocomplete is async (`suggestPaths`) and
+ * merged in CommandPalette.
+ */
 export const defaultProviders: GotoProvider[] = [
-  pathProvider,
   hereSectionProvider,
   jumpSectionProvider,
   reposProvider,

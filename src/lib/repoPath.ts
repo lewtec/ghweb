@@ -81,6 +81,12 @@ export function resolveFromCodeLocation(
   if (!raw) return null;
 
   const cur = stripSlashes(loc.path);
+
+  // Current directory (blob → containing folder)
+  if (raw === '.' || raw === './') {
+    return loc.mode === 'blob' ? dirnameRepo(cur) : cur;
+  }
+
   const ups = pureUps(raw);
   if (ups != null) {
     let p = cur;

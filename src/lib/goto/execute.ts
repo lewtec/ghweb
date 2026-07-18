@@ -22,12 +22,15 @@ export async function executeGoto(
   }
 
   try {
-    const kind = await probeRepoPath(
-      action.owner,
-      action.name,
-      action.ref,
-      action.path,
-    );
+    let kind = action.knownKind ?? null;
+    if (!kind) {
+      kind = await probeRepoPath(
+        action.owner,
+        action.name,
+        action.ref,
+        action.path,
+      );
+    }
     if (!kind) {
       const display = action.path || '/';
       deps.toastError(
