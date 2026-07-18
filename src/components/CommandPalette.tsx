@@ -4,6 +4,7 @@ import { useNavigate, useRouterState } from '@tanstack/react-router';
 import {
   CircleDot,
   Code2,
+  FileCode2,
   GitPullRequest,
   Home,
   Search,
@@ -12,9 +13,18 @@ import { githubUrlToAppPath } from '@/lib/githubUrl';
 import {
   fuzzyMatch,
   listRecentRepos,
+  parseCodeLocation,
   parseRepoFromPath,
   type RecentRepo,
 } from '@/lib/recentRepos';
+import {
+  appPathForObject,
+  cwdFromCodeLocation,
+  isPathExpression,
+  resolveRepoPath,
+} from '@/lib/repoPath';
+import { probeRepoPath } from '@/lib/rest';
+import { useToast } from '@/lib/toast';
 import { cn } from '@/lib/cls';
 
 type Props = {
@@ -27,19 +37,28 @@ type CmdItem = {
   label: string;
   hint?: string;
   value: string;
-  path: string;
+  /** Immediate navigation target */
+  path?: string;
+  /** Async action (e.g. probe path then navigate) */
+  run?: () => void | Promise<void>;
   group: string;
   icon?: typeof Code2;
 };
 
 export function CommandPalette({ open, onOpenChange }: Props) {
   const navigate = useNavigate();
+  const toast = useToast();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [q, setQ] = useState('');
+  const [busy, setBusy] = useState(false);
   const currentRepo = parseRepoFromPath(pathname);
+  const codeLoc = parseCodeLocation(pathname);
 
   useEffect(() => {
-    if (!open) setQ('');
+    if (!open) {
+      setQ('');
+      setBusy(false);
+    }
   }, [open]);
 
   useEffect(() => {
@@ -55,15 +74,28 @@ export function CommandPalette({ open, onOpenChange }: Props) {
   }, [open, onOpenChange]);
 
   const items = useMemo(
-    () => buildItems(q, currentRepo, listRecentRepos()),
-    [q, currentRepo, pathname],
+    () =>
+      buildItems(q, currentRepo, codeLoc, listRecentRepos(), {
+        navigate,
+        toast,
+        onOpenChange,
+        setBusy,
+      }),
+    [q, currentRepo, codeLoc, pathname, navigate, toast, onOpenChange],
   );
 
   if (!open) return null;
 
-  const go = (path: string) => {
-    onOpenChange(false);
-    void navigate({ to: path });
+  const select = (item: CmdItem) => {
+    if (busy) return;
+    if (item.run) {
+      void item.run();
+      return;
+    }
+    if (item.path) {
+      onOpenChange(false);
+      void navigate({ to: item.path });
+    }
   };
 
   const groups = groupBy(items, (i) => i.group);
@@ -71,17 +103,26 @@ export function CommandPalette({ open, onOpenChange }: Props) {
   return (
     <div className="modal modal-open">
       <div className="modal-box p-0 overflow-hidden w-full max-w-lg">
-        <Command label="Command palette" className="bg-base-100" shouldFilter={false}>
+        <Command
+          label="Command palette"
+          className="bg-base-100"
+          shouldFilter={false}
+        >
           <Command.Input
             value={q}
             onValueChange={setQ}
-            placeholder=" /code  /issues  /prs  ·  owner/repo  ·  search…"
+            placeholder={
+              codeLoc
+                ? 'Path: ../foo  ·  /src/x  ·  /code /issues  ·  owner/repo'
+                : ' /code  /issues  /prs  ·  owner/repo  ·  search…'
+            }
             className="input input-bordered w-full rounded-none border-0 border-b border-base-300 focus:outline-none"
             autoFocus
+            disabled={busy}
           />
           <Command.List className="max-h-[min(60vh,24rem)] overflow-auto p-2">
             <Command.Empty className="p-3 text-sm opacity-60">
-              No matches
+              {busy ? 'Checking path…' : 'No matches'}
             </Command.Empty>
             {Object.entries(groups).map(([group, list]) => (
               <Command.Group
@@ -95,7 +136,8 @@ export function CommandPalette({ open, onOpenChange }: Props) {
                     <Command.Item
                       key={item.id}
                       value={item.value}
-                      onSelect={() => go(item.path)}
+                      disabled={busy}
+                      onSelect={() => select(item)}
                       className={cn(
                         'flex items-center gap-2 px-3 py-2 rounded cursor-pointer',
                         'aria-selected:bg-base-200',
@@ -130,14 +172,74 @@ export function CommandPalette({ open, onOpenChange }: Props) {
   );
 }
 
+type PathDeps = {
+  navigate: ReturnType<typeof useNavigate>;
+  toast: ReturnType<typeof useToast>;
+  onOpenChange: (open: boolean) => void;
+  setBusy: (b: boolean) => void;
+};
+
 function buildItems(
   rawQ: string,
   current: { owner: string; name: string } | null,
+  codeLoc: ReturnType<typeof parseCodeLocation>,
   recent: RecentRepo[],
+  deps: PathDeps,
 ): CmdItem[] {
   const items: CmdItem[] = [];
   const q = rawQ.trim();
   const slash = parseSlashCommand(q);
+
+  // Path expression relative to current blob/tree
+  if (codeLoc && current && !slash && isPathExpression(q)) {
+    const cwd = cwdFromCodeLocation(codeLoc);
+    const resolved = resolveRepoPath(cwd, q);
+    if (resolved != null) {
+      const display = resolved || '/';
+      items.push({
+        id: 'path-jump',
+        label: `Open ${display}`,
+        hint: cwd ? `from ${cwd}/` : 'from /',
+        value: `path ${q} ${resolved}`,
+        group: 'Path',
+        icon: FileCode2,
+        run: async () => {
+          deps.setBusy(true);
+          try {
+            const kind = await probeRepoPath(
+              current.owner,
+              current.name,
+              codeLoc.refName,
+              resolved,
+            );
+            if (!kind) {
+              deps.toast.error(
+                'Path not found',
+                `${display} does not exist on ${codeLoc.refName}`,
+              );
+              return;
+            }
+            const appPath = appPathForObject(
+              current.owner,
+              current.name,
+              codeLoc.refName,
+              resolved,
+              kind,
+            );
+            deps.onOpenChange(false);
+            void deps.navigate({ to: appPath });
+          } catch (e) {
+            deps.toast.error(
+              'Could not open path',
+              e instanceof Error ? e.message : String(e),
+            );
+          } finally {
+            deps.setBusy(false);
+          }
+        },
+      });
+    }
+  }
 
   // Location-scoped section jumps
   if (current) {
@@ -188,12 +290,12 @@ function buildItems(
       items.push(sectionItemFor(r, slash.cmd));
     }
   } else if (!slash || !slash.rest) {
-    // Recent / fuzzy repos
     const repos = filterRepos(recent, current, slash ? '' : q);
     for (const r of repos) {
       if (slash) {
         items.push(sectionItemFor(r, slash.cmd));
-      } else {
+      } else if (!(codeLoc && isPathExpression(q))) {
+        // avoid treating path jumps as owner/repo
         items.push({
           id: `repo-${r.nameWithOwner}`,
           label: r.nameWithOwner,
@@ -230,7 +332,14 @@ function buildItems(
     });
   }
 
-  if (q.includes('/') && !q.includes(' ') && !q.startsWith('/')) {
+  if (
+    q.includes('/') &&
+    !q.includes(' ') &&
+    !q.startsWith('/') &&
+    !q.startsWith('.') &&
+    !q.includes('..') &&
+    !(codeLoc && isPathExpression(q))
+  ) {
     const bare = q.replace(/^\/+/, '');
     items.push({
       id: 'typed-repo',
@@ -243,7 +352,7 @@ function buildItems(
   }
 
   const searchQ = slash?.cmd === 'search' ? slash.rest : !slash ? q : '';
-  if (searchQ.trim()) {
+  if (searchQ.trim() && !(codeLoc && isPathExpression(q))) {
     items.push({
       id: 'search',
       label: `Search “${searchQ.trim()}”`,
@@ -255,15 +364,9 @@ function buildItems(
     });
   }
 
-  // Prefer current-repo section commands when query empty
-  if (!q && current) {
-    // already added This repository
-  }
-
-  // Dedupe by path+label
   const seen = new Set<string>();
   return items.filter((it) => {
-    const k = `${it.path}::${it.label}`;
+    const k = `${it.path ?? it.id}::${it.label}`;
     if (seen.has(k)) return false;
     seen.add(k);
     return true;
@@ -272,12 +375,24 @@ function buildItems(
 
 function parseSlashCommand(q: string): { cmd: string; rest: string } | null {
   if (!q.startsWith('/')) return null;
+  // Path absolute in-repo: /src/foo — not a slash command
   const body = q.slice(1).trim();
   const [cmdRaw, ...restParts] = body.split(/\s+/);
   const cmd = (cmdRaw ?? '').toLowerCase();
   if (!cmd) return { cmd: '', rest: '' };
+  const known = [
+    'code',
+    'issues',
+    'issue',
+    'prs',
+    'pulls',
+    'pr',
+    'pull',
+    'search',
+    's',
+  ];
+  if (!known.includes(cmd)) return null;
   const rest = restParts.join(' ').trim();
-  // aliases
   const normalized =
     cmd === 'pulls' || cmd === 'pr' || cmd === 'pull'
       ? 'prs'
@@ -318,10 +433,7 @@ function filterRepos(
     .slice(0, 12);
 }
 
-function sectionItemFor(
-  r: RecentRepo,
-  cmd: string,
-): CmdItem {
+function sectionItemFor(r: RecentRepo, cmd: string): CmdItem {
   const base = `/${r.owner}/${r.name}`;
   if (cmd === 'issues') {
     return {
@@ -345,7 +457,6 @@ function sectionItemFor(
       icon: GitPullRequest,
     };
   }
-  // default /code
   return {
     id: `code-${r.nameWithOwner}`,
     label: `Code · ${r.nameWithOwner}`,
