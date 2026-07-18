@@ -1,4 +1,5 @@
 import { graphql, useLazyLoadQuery, useMutation } from 'react-relay';
+import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
 import { ConnectionHandler } from 'relay-runtime';
 import { useState } from 'react';
 import type { IssueDetailPageQuery } from './__generated__/IssueDetailPageQuery.graphql';
@@ -137,9 +138,11 @@ type Props = { owner: string; name: string; number: number };
 export function IssueDetailPage({ owner, name, number }: Props) {
   const toast = useToast();
   const variables = { owner, name, number };
-  const data = useLazyLoadQuery<IssueDetailPageQuery>(query, variables, {
-    fetchPolicy: 'store-and-network',
-  });
+  const data = useLazyLoadQuery<IssueDetailPageQuery>(
+    query,
+    variables,
+    STORE_AND_NETWORK,
+  );
   useLiveQuery(query, variables);
 
   const issue = data.repository?.issue;

@@ -1,4 +1,5 @@
 import { graphql, useLazyLoadQuery } from 'react-relay';
+import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
 import { Link } from '@tanstack/react-router';
 import { AuthorByline } from '@/components/AuthorByline';
 import { IssueStateBadge } from '@/components/IssueStateBadge';
@@ -41,7 +42,7 @@ const query = graphql`
 type Props = { owner: string; name: string };
 
 export function IssuesListPage({ owner, name }: Props) {
-  const data = useLazyLoadQuery<IssuesListPageQuery>(query, { owner, name });
+  const data = useLazyLoadQuery<IssuesListPageQuery>(query, { owner, name }, STORE_AND_NETWORK);
   const issues = data.repository?.issues.nodes ?? [];
 
   return (

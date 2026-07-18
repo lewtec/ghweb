@@ -1,5 +1,6 @@
 import { Suspense, useMemo } from 'react';
 import { graphql, useLazyLoadQuery } from 'react-relay';
+import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
 import { Link } from '@tanstack/react-router';
 import type { HomePageQuery } from './__generated__/HomePageQuery.graphql';
 import type { HomePageMoreReposQuery } from './__generated__/HomePageMoreReposQuery.graphql';
@@ -150,6 +151,7 @@ function HomeMoreRepos({
   const data = useLazyLoadQuery<HomePageMoreReposQuery>(
     moreReposQuery,
     {},
+    STORE_AND_NETWORK,
   );
   const nodes = data.viewer.repositories.nodes ?? [];
   const more = nodes.flatMap((r) => {
@@ -198,7 +200,7 @@ function HomeMoreRepos({
 }
 
 export function HomePage() {
-  const data = useLazyLoadQuery<HomePageQuery>(query, {});
+  const data = useLazyLoadQuery<HomePageQuery>(query, {}, STORE_AND_NETWORK);
 
   const { active, activeSet } = useMemo(() => {
     const signals: WorkSignal[] = [];

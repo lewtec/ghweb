@@ -1,6 +1,13 @@
 import { Command } from 'cmdk';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from 'react';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
+import { InlinePending } from '@/components/PagePending';
 import {
   CircleDot,
   Code2,
@@ -41,6 +48,7 @@ const ICONS: Record<GotoIcon, LucideIcon> = {
 export function CommandPalette({ open, onOpenChange }: Props) {
   const navigate = useNavigate();
   const toast = useToast();
+  const [, startTransition] = useTransition();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [q, setQ] = useState('');
   const [busy, setBusy] = useState(false);
@@ -95,6 +103,7 @@ export function CommandPalette({ open, onOpenChange }: Props) {
     }
 
     let cancelled = false;
+    // Keep previous path items visible while the next list loads (no flicker)
     setPathLoading(true);
     const handle = window.setTimeout(() => {
       void suggestPaths(ctx, qtrim)
@@ -107,7 +116,7 @@ export function CommandPalette({ open, onOpenChange }: Props) {
         .finally(() => {
           if (!cancelled) setPathLoading(false);
         });
-    }, 120);
+    }, 80);
 
     return () => {
       cancelled = true;
@@ -151,7 +160,12 @@ export function CommandPalette({ open, onOpenChange }: Props) {
     setBusy(true);
     try {
       const result = await executeGoto(item.action, {
-        navigate: (to) => navigate({ href: to }),
+        // startTransition keeps the previous route painted while the next suspends
+        navigate: (to) => {
+          startTransition(() => {
+            void navigate({ href: to });
+          });
+        },
         toastError: (title, detail) => toast.error(title, detail),
       });
       if (result === 'navigated') onOpenChange(false);
@@ -208,10 +222,15 @@ export function CommandPalette({ open, onOpenChange }: Props) {
             <Command.Empty className="p-3 text-sm opacity-60">
               {busy
                 ? 'Going…'
-                : pathLoading
+                : pathLoading && items.length === 0
                   ? 'Loading paths…'
                   : 'No matches'}
             </Command.Empty>
+            {pathLoading && pathItems.length > 0 ? (
+              <div className="px-2 py-1">
+                <InlinePending label="Updating paths…" />
+              </div>
+            ) : null}
             {Object.entries(groups).map(([group, list]) => (
               <Command.Group
                 key={group}

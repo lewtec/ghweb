@@ -1,4 +1,5 @@
 import { graphql, useLazyLoadQuery } from 'react-relay';
+import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
 import { Link } from '@tanstack/react-router';
 import { AuthorByline } from '@/components/AuthorByline';
 import { PrStateBadge } from '@/components/PrStateBadge';
@@ -36,7 +37,7 @@ const query = graphql`
 type Props = { owner: string; name: string };
 
 export function PullsListPage({ owner, name }: Props) {
-  const data = useLazyLoadQuery<PullsListPageQuery>(query, { owner, name });
+  const data = useLazyLoadQuery<PullsListPageQuery>(query, { owner, name }, STORE_AND_NETWORK);
   const prs = data.repository?.pullRequests.nodes ?? [];
 
   return (

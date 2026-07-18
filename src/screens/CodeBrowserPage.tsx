@@ -1,4 +1,5 @@
 import { graphql, useLazyLoadQuery } from 'react-relay';
+import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
 import { Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import type { CodeBrowserPageQuery } from './__generated__/CodeBrowserPageQuery.graphql';
@@ -89,11 +90,11 @@ function MarkdownBlob({
 
 export function CodeBrowserPage({ owner, name, refName, path, mode }: Props) {
   const expression = path ? `${refName}:${path}` : refName;
-  const data = useLazyLoadQuery<CodeBrowserPageQuery>(query, {
-    owner,
-    name,
-    expression,
-  });
+  const data = useLazyLoadQuery<CodeBrowserPageQuery>(
+    query,
+    { owner, name, expression },
+    STORE_AND_NETWORK,
+  );
   const obj = data.repository?.object;
   const ghBlob =
     mode === 'blob' && path

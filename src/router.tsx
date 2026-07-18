@@ -9,7 +9,9 @@ import { SimpleErrorBoundary } from '@/components/SimpleErrorBoundary';
 import { TopBar } from '@/components/TopBar';
 import { CommandPalette } from '@/components/CommandPalette';
 import { LoadingBlock } from '@/components/LoadingBlock';
+import { PagePending } from '@/components/PagePending';
 import { graphql, useLazyLoadQuery } from 'react-relay';
+import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
 import type { routerViewerQuery } from './__generated__/routerViewerQuery.graphql';
 
 const HomePage = lazy(() =>
@@ -59,7 +61,13 @@ const viewerQuery = graphql`
 
 function ViewerChrome({ children }: { children: ReactNode }) {
   return (
-    <Suspense fallback={<LoadingBlock label="Loading session…" />}>
+    <Suspense
+      fallback={
+        <div className="h-dvh flex items-center justify-center">
+          <LoadingBlock label="Loading session…" />
+        </div>
+      }
+    >
       <ViewerChromeInner>{children}</ViewerChromeInner>
     </Suspense>
   );
@@ -67,7 +75,12 @@ function ViewerChrome({ children }: { children: ReactNode }) {
 
 function ViewerChromeInner({ children }: { children: ReactNode }) {
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const viewer = useLazyLoadQuery<routerViewerQuery>(viewerQuery, {});
+  // Reuse viewer record across navigations (no full remount suspend)
+  const viewer = useLazyLoadQuery<routerViewerQuery>(
+    viewerQuery,
+    {},
+    STORE_AND_NETWORK,
+  );
 
   return (
     <div className="h-dvh max-h-dvh flex flex-col w-full min-w-0 overflow-hidden">
@@ -81,14 +94,12 @@ function ViewerChromeInner({ children }: { children: ReactNode }) {
         }}
       />
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
-      <main className="flex-1 min-h-0 min-w-0 overflow-auto w-full flex flex-col">
-        <Suspense
-          fallback={
-            <div className="flex-1 min-h-0 flex items-center justify-center">
-              <LoadingBlock />
-            </div>
-          }
-        >
+      <main className="flex-1 min-h-0 min-w-0 overflow-auto w-full flex flex-col relative">
+        {/*
+          Outer Suspense: with startTransition navigations React keeps the
+          previous page painted; this fallback is only a thin bar, not a blank.
+        */}
+        <Suspense fallback={<PagePending />}>
           <SimpleErrorBoundary className="flex-1 min-h-0 min-w-0 flex flex-col">
             {children}
           </SimpleErrorBoundary>
@@ -102,8 +113,11 @@ function Suspend({ children }: { children: ReactNode }) {
   return (
     <Suspense
       fallback={
-        <div className="flex-1 min-h-0 flex items-center justify-center p-4">
-          <LoadingBlock />
+        <div className="flex-1 min-h-0 flex flex-col">
+          <PagePending />
+          <div className="flex-1 flex items-center justify-center p-4 opacity-40">
+            <LoadingBlock />
+          </div>
         </div>
       }
     >
@@ -351,6 +365,8 @@ const routeTree = rootRoute.addChildren([
 export const router = createRouter({
   routeTree,
   defaultPreload: 'intent',
+  /** Avoid flashing pending UI for instant cache hits */
+  defaultPendingMs: 200,
 });
 
 declare module '@tanstack/react-router' {

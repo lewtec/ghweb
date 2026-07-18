@@ -72,6 +72,13 @@ export async function suggestPaths(
       anchor.refName,
       listDir,
     );
+    // Warm parent directory cache for snappy `../`
+    if (listDir) {
+      const parent = listDir.includes('/')
+        ? listDir.slice(0, listDir.lastIndexOf('/'))
+        : '';
+      void listRepoDir(anchor.owner, anchor.name, anchor.refName, parent);
+    }
   } catch {
     return out;
   }

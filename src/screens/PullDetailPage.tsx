@@ -5,6 +5,7 @@ import {
   useMutation,
   useRelayEnvironment,
 } from 'react-relay';
+import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
 import { lazy, Suspense, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import type {
@@ -259,9 +260,11 @@ export function PullDetailPage({
   const toast = useToast();
   const env = useRelayEnvironment();
   const variables = { owner, name, number };
-  const data = useLazyLoadQuery<PullDetailPageQuery>(query, variables, {
-    fetchPolicy: 'store-and-network',
-  });
+  const data = useLazyLoadQuery<PullDetailPageQuery>(
+    query,
+    variables,
+    STORE_AND_NETWORK,
+  );
   useLiveQuery(query, variables);
 
   const refresh = () => {

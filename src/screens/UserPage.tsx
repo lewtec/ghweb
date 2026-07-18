@@ -1,4 +1,5 @@
 import { graphql, useLazyLoadQuery } from 'react-relay';
+import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
 import { Link } from '@tanstack/react-router';
 import type { UserPageQuery } from './__generated__/UserPageQuery.graphql';
 import { ExternalLink } from '@/components/ExternalLink';
@@ -53,7 +54,7 @@ const query = graphql`
 type Props = { login: string };
 
 export function UserPage({ login }: Props) {
-  const data = useLazyLoadQuery<UserPageQuery>(query, { login });
+  const data = useLazyLoadQuery<UserPageQuery>(query, { login }, STORE_AND_NETWORK);
   const owner = data.repositoryOwner;
 
   if (!owner) {

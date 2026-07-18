@@ -1,4 +1,5 @@
 import { graphql, useLazyLoadQuery } from 'react-relay';
+import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
 import { Link } from '@tanstack/react-router';
 import type { SearchPageQuery } from './__generated__/SearchPageQuery.graphql';
 
@@ -57,7 +58,7 @@ export function SearchPage({ q }: Props) {
   const data = useLazyLoadQuery<SearchPageQuery>(
     query,
     { q: q || 'is:open' },
-    { fetchKey: q },
+    { ...STORE_AND_NETWORK, fetchKey: q },
   );
 
   return (

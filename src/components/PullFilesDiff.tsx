@@ -415,28 +415,35 @@ export function PullFilesDiff({
 }: Props) {
   const [files, setFiles] = useState<RestPullFile[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'unified' | 'split'>('unified');
   const [openPath, setOpenPath] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(true);
 
   const load = useCallback(() => {
     setError(null);
-    setFiles(null);
+    setLoading(true);
+    // Keep previous file list painted while refreshing (no blank flash)
     void fetchPullFiles(owner, name, number)
       .then((f) => {
         setFiles(f);
-        setOpenPath(f[0]?.filename ?? null);
+        setOpenPath((prev) =>
+          prev && f.some((x) => x.filename === prev)
+            ? prev
+            : (f[0]?.filename ?? null),
+        );
       })
       .catch((e: unknown) => {
         setError(e instanceof Error ? e.message : String(e));
-      });
+      })
+      .finally(() => setLoading(false));
   }, [owner, name, number]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  if (error) {
+  if (error && !files) {
     return (
       <ErrorBanner
         title="Could not load PR file patches (REST)"
@@ -452,7 +459,12 @@ export function PullFilesDiff({
     : files.filter((f) => f.filename === openPath);
 
   return (
-    <div className="flex flex-col lg:flex-row gap-0 lg:gap-3 w-full min-h-[70vh]">
+    <div
+      className={cn(
+        'flex flex-col lg:flex-row gap-0 lg:gap-3 w-full min-h-[70vh]',
+        loading && 'opacity-80',
+      )}
+    >
       <aside className="lg:w-64 shrink-0 border border-base-300 rounded-box bg-base-200/40 max-h-[40vh] lg:max-h-[calc(100vh-8rem)] overflow-auto lg:sticky lg:top-2">
         <div className="p-2 flex flex-wrap gap-1 border-b border-base-300 sticky top-0 bg-base-200 z-10">
           <div className="join">
