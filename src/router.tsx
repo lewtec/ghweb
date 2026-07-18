@@ -44,6 +44,9 @@ const PullDetailPage = lazy(() =>
 const SearchPage = lazy(() =>
   import('@/screens/SearchPage').then((m) => ({ default: m.SearchPage })),
 );
+const UserPage = lazy(() =>
+  import('@/screens/UserPage').then((m) => ({ default: m.UserPage })),
+);
 
 const viewerQuery = graphql`
   query routerViewerQuery {
@@ -137,6 +140,22 @@ const searchRoute = createRoute({
       <ViewerChrome>
         <Suspend>
           <SearchPage q={q} />
+        </Suspend>
+      </ViewerChrome>
+    );
+  },
+});
+
+/** User / org profile — single segment so it does not clash with `/$owner/$name`. */
+const userRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/$login',
+  component: function UserRoute() {
+    const { login } = userRoute.useParams();
+    return (
+      <ViewerChrome>
+        <Suspend>
+          <UserPage login={login} />
         </Suspend>
       </ViewerChrome>
     );
@@ -293,6 +312,7 @@ const pullFilesRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   searchRoute,
+  userRoute,
   repoLayoutRoute.addChildren([
     repoIndexRoute,
     treeRoute,
