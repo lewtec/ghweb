@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { expandSlash, tabCompleteQuery } from '../tabComplete';
+import { expandSlash, tabCompleteQuery, toAbsoluteQuery } from '../tabComplete';
 import type { GotoCandidate } from '../types';
 
 function pathItem(
@@ -24,6 +24,14 @@ function pathItem(
   };
 }
 
+describe('toAbsoluteQuery', () => {
+  it('adds leading slash and trailing for dirs', () => {
+    expect(toAbsoluteQuery('src/lib', true)).toBe('/src/lib/');
+    expect(toAbsoluteQuery('README.md', false)).toBe('/README.md');
+    expect(toAbsoluteQuery('', true)).toBe('/');
+  });
+});
+
 describe('expandSlash', () => {
   it('expands /pr to /prs ', () => {
     expect(expandSlash('/pr')).toBe('/prs ');
@@ -31,24 +39,22 @@ describe('expandSlash', () => {
   it('expands /i to /issues ', () => {
     expect(expandSlash('/i')).toBe('/issues ');
   });
-  it('expands /s to /search ', () => {
-    expect(expandSlash('/s')).toBe('/search ');
-  });
-  it('no-op when ambiguous or already has rest', () => {
-    expect(expandSlash('/prs foo')).toBeNull();
+  it('does not treat /src as slash command', () => {
+    expect(expandSlash('/src')).toBeNull();
   });
 });
 
 describe('tabCompleteQuery', () => {
-  it('expands path to directory with trailing slash', () => {
+  it('replaces query with absolute dir path', () => {
     const items = [pathItem('src/lib', { dir: true, value: 'path src/lib' })];
-    expect(tabCompleteQuery('s', items, 'path src/lib')).toBe('src/lib/');
+    expect(tabCompleteQuery('s', items, 'path src/lib')).toBe('/src/lib/');
+    expect(tabCompleteQuery('li', items, 'path src/lib')).toBe('/src/lib/');
   });
 
-  it('expands path to file without slash', () => {
+  it('replaces query with absolute file path', () => {
     const items = [pathItem('README.md', { value: 'path README.md' })];
     expect(tabCompleteQuery('READ', items, 'path README.md')).toBe(
-      'README.md',
+      '/README.md',
     );
   });
 

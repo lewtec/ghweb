@@ -160,7 +160,7 @@ export function CommandPalette({ open, onOpenChange }: Props) {
     }
   };
 
-  /** Capture-phase: always swallow Tab so focus never leaves the input. */
+  /** Single capture handler: replace input text entirely (never append). */
   const onTabCapture = (e: React.KeyboardEvent) => {
     if (e.key !== 'Tab') return;
     e.preventDefault();
@@ -170,18 +170,17 @@ export function CommandPalette({ open, onOpenChange }: Props) {
       itemsRef.current,
       selectedRef.current,
     );
-    if (next != null) setQ(next);
-    // Re-focus after React updates / browser tab order attempts
-    requestAnimationFrame(() => {
-      inputRef.current?.focus();
-    });
+    if (next != null) {
+      qRef.current = next;
+      setQ(next);
+      // Force controlled input to the new value immediately
+      if (inputRef.current) inputRef.current.value = next;
+    }
+    requestAnimationFrame(() => inputRef.current?.focus());
   };
 
   return (
-    <div
-      className="modal modal-open"
-      onKeyDownCapture={onTabCapture}
-    >
+    <div className="modal modal-open" onKeyDownCapture={onTabCapture}>
       <div className="modal-box p-0 overflow-hidden w-full max-w-lg">
         <Command
           label="Command palette"
@@ -190,13 +189,11 @@ export function CommandPalette({ open, onOpenChange }: Props) {
           value={selected}
           onValueChange={setSelected}
           loop
-          onKeyDownCapture={onTabCapture}
         >
           <Command.Input
             ref={inputRef}
             value={q}
             onValueChange={setQ}
-            onKeyDown={onTabCapture}
             placeholder={
               ctx.pathNav
                 ? 'Tab expands path · /pr → PRs  ·  Enter opens'
