@@ -45,6 +45,8 @@ export function CommandPalette({ open, onOpenChange }: Props) {
   const [busy, setBusy] = useState(false);
   const [pathItems, setPathItems] = useState<GotoCandidate[]>([]);
   const [pathLoading, setPathLoading] = useState(false);
+  /** Controlled selection so Enter always hits the first match after list updates. */
+  const [selected, setSelected] = useState('');
 
   const ctx = useMemo(() => buildGotoContext(pathname), [pathname]);
 
@@ -54,6 +56,7 @@ export function CommandPalette({ open, onOpenChange }: Props) {
       setBusy(false);
       setPathItems([]);
       setPathLoading(false);
+      setSelected('');
     }
   }, [open]);
 
@@ -118,10 +121,24 @@ export function CommandPalette({ open, onOpenChange }: Props) {
 
   const groups = useMemo(() => groupCandidates(items), [items]);
 
+  // Keep first item selected when the list rebuilds (async paths, typing).
+  // Without this, Enter does nothing until the user arrows.
+  useEffect(() => {
+    if (items.length === 0) {
+      setSelected('');
+      return;
+    }
+    const stillThere = items.some((i) => i.value === selected);
+    if (!stillThere) {
+      setSelected(items[0]!.value);
+    }
+  }, [items, selected]);
+
   if (!open) return null;
 
-  const select = async (item: GotoCandidate) => {
-    if (busy) return;
+  const selectByValue = async (value: string) => {
+    const item = items.find((i) => i.value === value);
+    if (!item || busy) return;
     setBusy(true);
     try {
       const result = await executeGoto(item.action, {
@@ -141,6 +158,10 @@ export function CommandPalette({ open, onOpenChange }: Props) {
           label="Command palette"
           className="bg-base-100"
           shouldFilter={false}
+          value={selected}
+          onValueChange={setSelected}
+          // Remount item tree identity when list identity shifts so selection applies
+          loop
         >
           <Command.Input
             value={q}
@@ -175,10 +196,10 @@ export function CommandPalette({ open, onOpenChange }: Props) {
                       key={item.id}
                       value={item.value}
                       disabled={busy}
-                      onSelect={() => void select(item)}
+                      onSelect={(value) => void selectByValue(value)}
                       className={cn(
                         'flex items-center gap-2 px-3 py-2 rounded cursor-pointer',
-                        'aria-selected:bg-base-200',
+                        'aria-selected:bg-base-200 data-[selected=true]:bg-base-200',
                       )}
                     >
                       {Icon ? (
