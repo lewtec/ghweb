@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { CodeBrowserPageQuery } from './__generated__/CodeBrowserPageQuery.graphql';
+import { ExternalLink } from '@/components/ExternalLink';
 
 const query = graphql`
   query CodeBrowserPageQuery(
@@ -53,14 +54,12 @@ export function CodeBrowserPage({ owner, name, refName, path, mode }: Props) {
     return (
       <div className="p-4 alert alert-warning">
         Not found: {expression}.{' '}
-        <a
+        <ExternalLink
           className="link"
           href={`https://github.com/${owner}/${name}/${mode}/${refName}/${path}`}
-          target="_blank"
-          rel="noreferrer"
         >
           Open on GitHub
-        </a>
+        </ExternalLink>
       </div>
     );
   }
@@ -123,14 +122,12 @@ export function CodeBrowserPage({ owner, name, refName, path, mode }: Props) {
       return (
         <div className="p-4 alert alert-info">
           Binary file ({obj.byteSize ?? '?'} bytes).{' '}
-          <a
+          <ExternalLink
             className="link"
             href={`https://github.com/${owner}/${name}/blob/${refName}/${path}`}
-            target="_blank"
-            rel="noreferrer"
           >
             Open on GitHub
-          </a>
+          </ExternalLink>
         </div>
       );
     }
@@ -139,14 +136,12 @@ export function CodeBrowserPage({ owner, name, refName, path, mode }: Props) {
       return (
         <div className="p-4 alert alert-warning">
           File too large to render in gitweb ({text.length} chars).{' '}
-          <a
+          <ExternalLink
             className="link"
             href={`https://github.com/${owner}/${name}/blob/${refName}/${path}`}
-            target="_blank"
-            rel="noreferrer"
           >
             Open on GitHub
-          </a>
+          </ExternalLink>
         </div>
       );
     }

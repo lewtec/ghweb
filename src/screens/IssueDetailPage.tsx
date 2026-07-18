@@ -10,6 +10,7 @@ import type { IssueDetailPageCommentMutation } from './__generated__/IssueDetail
 import type { IssueDetailPageTitleMutation } from './__generated__/IssueDetailPageTitleMutation.graphql';
 import { useToast } from '@/lib/toast';
 import { useLiveQuery } from '@/lib/useLiveQuery';
+import { ExternalLink } from '@/components/ExternalLink';
 
 const query = graphql`
   query IssueDetailPageQuery($owner: String!, $name: String!, $number: Int!) {
@@ -147,14 +148,12 @@ export function IssueDetailPage({ owner, name, number }: Props) {
     return (
       <div className="p-4 alert alert-warning">
         Issue not found.{' '}
-        <a
+        <ExternalLink
           className="link"
           href={`https://github.com/${owner}/${name}/issues/${number}`}
-          target="_blank"
-          rel="noreferrer"
         >
           Open on GitHub
-        </a>
+        </ExternalLink>
       </div>
     );
   }
@@ -254,14 +253,9 @@ export function IssueDetailPage({ owner, name, number }: Props) {
                 <span className="opacity-50 text-xs">No assignees</span>
               ) : null}
             </div>
-            <a
-              className="link text-xs"
-              href={issue.url}
-              target="_blank"
-              rel="noreferrer"
-            >
+            <ExternalLink className="link text-xs" href={issue.url}>
               Open on GitHub
-            </a>
+            </ExternalLink>
           </div>
         ) : (
           <div className="text-xs opacity-60">
@@ -412,14 +406,9 @@ export function IssueDetailPage({ owner, name, number }: Props) {
             Reopen
           </button>
         )}
-        <a
-          className="btn btn-sm btn-ghost ml-auto"
-          href={issue.url}
-          target="_blank"
-          rel="noreferrer"
-        >
+        <ExternalLink className="btn btn-sm btn-ghost ml-auto" href={issue.url}>
           GitHub
-        </a>
+        </ExternalLink>
       </div>
     </div>
   );

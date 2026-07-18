@@ -5,6 +5,7 @@ import { fetchPullFiles, type RestPullFile } from '@/lib/rest';
 import { LoadingBlock } from '@/components/LoadingBlock';
 import { ErrorBanner } from '@/components/ErrorBanner';
 import { getThemePreference } from '@/lib/theme';
+import { ExternalLink } from '@/components/ExternalLink';
 
 type Props = {
   owner: string;
@@ -124,14 +125,12 @@ export function PullFilesDiff({ owner, name, number }: Props) {
         ) : (
           <div className="alert alert-info text-sm">
             No patch available (binary or too large).{' '}
-            <a
+            <ExternalLink
               className="link"
               href={`https://github.com/${owner}/${name}/pull/${number}/files`}
-              target="_blank"
-              rel="noreferrer"
             >
               Open on GitHub
-            </a>
+            </ExternalLink>
           </div>
         )
       ) : null}

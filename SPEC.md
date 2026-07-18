@@ -168,7 +168,16 @@ Local mutations update via Relay optimistics + payload. Other users’ changes a
 - Include GraphQL `rateLimit` in queries where useful for diagnostics  
 - Unsupported feature → clear copy + optional Open on GitHub  
 
-### 7.6 Theme
+### 7.6 External links
+
+All **outside** links (github.com, docs, anything not an in-app route) **must open in a new browser tab**:
+
+- `target="_blank"`
+- `rel="noopener noreferrer"`
+
+Use the shared `ExternalLink` component (or equivalent) so this is not forgotten. In-app navigation stays same-tab via the router.
+
+### 7.7 Theme
 
 - Default: **system** (`prefers-color-scheme`)  
 - User toggle in avatar menu  
@@ -438,7 +447,8 @@ Decisions locked in the 2026-07 grill session:
 14. github.com now; baseUrl later  
 15. Dual license AGPL + commercial; CLA with relicense grant  
 16. mise: `codegen:schema`, `codegen:relay`, `codegen`→`codegen:*`; `format`/`lint` → **workspaced codebase format/lint**; `ci`; weekly schema PR; **no husky**  
-17. Diff UI: `@git-diff-view/react` (confirmed); library vs own split per §8.2  
+17. Diff UI: `@git-diff-view/react` (confirmed); library vs own split per §8.2
+18. External links open in a **new tab** (`target=_blank` + `noopener noreferrer`)  
 
 ---
 

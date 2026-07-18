@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { RepoPageQuery } from './__generated__/RepoPageQuery.graphql';
+import { ExternalLink } from '@/components/ExternalLink';
 
 const query = graphql`
   query RepoPageQuery($owner: String!, $name: String!) {
@@ -87,14 +88,9 @@ export function RepoPage({ owner, name }: Props) {
           {repo.primaryLanguage ? (
             <span>{repo.primaryLanguage.name}</span>
           ) : null}
-          <a
-            className="link"
-            href={repo.url}
-            target="_blank"
-            rel="noreferrer"
-          >
+          <ExternalLink className="link" href={repo.url}>
             Open on GitHub
-          </a>
+          </ExternalLink>
         </div>
       </div>
 

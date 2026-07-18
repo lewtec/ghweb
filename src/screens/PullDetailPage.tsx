@@ -15,6 +15,7 @@ import type { PullDetailPageReviewMutation } from './__generated__/PullDetailPag
 import { useToast } from '@/lib/toast';
 import { useLiveQuery } from '@/lib/useLiveQuery';
 import { LoadingBlock } from '@/components/LoadingBlock';
+import { ExternalLink } from '@/components/ExternalLink';
 
 const PullFilesDiff = lazy(() =>
   import('@/components/PullFilesDiff').then((m) => ({
@@ -355,14 +356,9 @@ export function PullDetailPage({ owner, name, number }: Props) {
             </button>
           </>
         ) : null}
-        <a
-          className="btn btn-sm btn-ghost ml-auto"
-          href={pr.url}
-          target="_blank"
-          rel="noreferrer"
-        >
+        <ExternalLink className="btn btn-sm btn-ghost ml-auto" href={pr.url}>
           GitHub
-        </a>
+        </ExternalLink>
       </div>
     </div>
   );
