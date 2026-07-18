@@ -1,0 +1,32 @@
+name: Schema refresh
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+      - run: mise run install
+      - name: Introspect schema
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: mise run codegen:schema
+      - run: mise run codegen:relay
+      - name: Open PR if dirty
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: 'chore: refresh GitHub GraphQL schema'
+          title: 'chore: refresh GitHub GraphQL schema'
+          body: |
+            Automated introspection of `api.github.com/graphql` and Relay recompile.
+          branch: chore/schema-refresh
+          delete-branch: true

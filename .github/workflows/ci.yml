@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+        with:
+          version: 2026.7.0
+      - run: mise run install
+      - run: mise run codegen:relay
+      - run: mise exec -- pnpm exec tsc --noEmit -p tsconfig.json
+      - run: mise exec -- pnpm exec vitest run
+      - run: mise exec -- pnpm exec vite build

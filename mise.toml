@@ -1,0 +1,41 @@
+[tools]
+node = "24"
+
+[env]
+_.path = ["./node_modules/.bin"]
+
+[tasks.install]
+run = "corepack enable && corepack prepare pnpm@10.12.1 --activate && pnpm install"
+
+[tasks."codegen:schema"]
+description = "Introspect GitHub GraphQL schema"
+run = "node scripts/fetch-schema.mjs"
+
+[tasks."codegen:relay"]
+description = "Run relay-compiler"
+run = "pnpm exec relay-compiler"
+
+[tasks.codegen]
+depends = ["codegen:*"]
+
+[tasks.format]
+run = "workspaced codebase format"
+
+[tasks.fmt]
+run = "workspaced codebase format"
+
+[tasks.lint]
+run = "workspaced codebase lint"
+
+[tasks.test]
+run = "pnpm exec vitest run"
+
+[tasks.build]
+depends = ["codegen:relay"]
+run = "pnpm exec tsc --noEmit -p tsconfig.json && pnpm exec vite build"
+
+[tasks.ci]
+depends = ["test", "build"]
+
+[tasks.dev]
+run = "pnpm exec vite"

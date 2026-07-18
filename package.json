@@ -1,0 +1,52 @@
+{
+  "name": "gitweb",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "license": "AGPL-3.0-or-later",
+  "packageManager": "pnpm@10.12.1",
+  "scripts": {
+    "dev": "vite",
+    "build": "relay-compiler && tsc -b --noEmit && vite build",
+    "preview": "vite preview",
+    "relay": "relay-compiler",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@git-diff-view/react": "^0.0.30",
+    "@tanstack/react-router": "^1.120.0",
+    "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
+    "lucide-react": "^0.511.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-markdown": "^10.1.0",
+    "react-relay": "^20.0.0",
+    "relay-runtime": "^20.0.0",
+    "remark-gfm": "^4.0.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.20",
+    "@tailwindcss/vite": "^4.1.7",
+    "@types/node": "^26.1.1",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@types/react-relay": "^18.2.1",
+    "@types/relay-runtime": "^19.0.2",
+    "@vitejs/plugin-react": "^4.4.1",
+    "babel-plugin-relay": "^20.0.0",
+    "daisyui": "^5.0.35",
+    "graphql": "^17.0.2",
+    "relay-compiler": "^20.0.0",
+    "tailwindcss": "^4.1.7",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5",
+    "vite-plugin-relay": "^2.1.0",
+    "vitest": "^3.1.4"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}
