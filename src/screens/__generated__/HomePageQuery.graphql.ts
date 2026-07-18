@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<c718fbca824dd64e5545d7c03f3f41fd>>
+ * @generated SignedSource<<12683c39ed6addb91e0cd6f7edd4a589>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -15,6 +15,23 @@ export type HomePageQuery$data = {
     readonly issueCount: number;
     readonly nodes: ReadonlyArray<{
       readonly id?: string;
+      readonly number?: number;
+      readonly repository?: {
+        readonly name: string;
+        readonly nameWithOwner: string;
+        readonly owner: {
+          readonly login: string;
+        };
+      };
+      readonly title?: string;
+      readonly updatedAt?: any;
+    } | null | undefined> | null | undefined;
+  };
+  readonly myOpenPrs: {
+    readonly issueCount: number;
+    readonly nodes: ReadonlyArray<{
+      readonly id?: string;
+      readonly isDraft?: boolean;
       readonly number?: number;
       readonly repository?: {
         readonly name: string;
@@ -58,12 +75,38 @@ export type HomePageQuery$data = {
         readonly description: string | null | undefined;
         readonly id: string;
         readonly isPrivate: boolean;
+        readonly issues: {
+          readonly totalCount: number;
+        };
         readonly name: string;
         readonly nameWithOwner: string;
         readonly owner: {
           readonly login: string;
         };
-        readonly stargazerCount: number;
+        readonly pullRequests: {
+          readonly totalCount: number;
+        };
+        readonly pushedAt: any | null | undefined;
+        readonly updatedAt: any;
+      } | null | undefined> | null | undefined;
+    };
+    readonly repositoriesContributedTo: {
+      readonly nodes: ReadonlyArray<{
+        readonly description: string | null | undefined;
+        readonly id: string;
+        readonly isPrivate: boolean;
+        readonly issues: {
+          readonly totalCount: number;
+        };
+        readonly name: string;
+        readonly nameWithOwner: string;
+        readonly owner: {
+          readonly login: string;
+        };
+        readonly pullRequests: {
+          readonly totalCount: number;
+        };
+        readonly pushedAt: any | null | undefined;
         readonly updatedAt: any;
       } | null | undefined> | null | undefined;
     };
@@ -135,35 +178,35 @@ v3 = {
   "name": "avatarUrl",
   "storageKey": null
 },
-v4 = [
-  "OWNER",
-  "COLLABORATOR",
-  "ORGANIZATION_MEMBER"
-],
+v4 = {
+  "kind": "Literal",
+  "name": "orderBy",
+  "value": {
+    "direction": "DESC",
+    "field": "PUSHED_AT"
+  }
+},
 v5 = [
   {
     "kind": "Literal",
-    "name": "affiliations",
-    "value": (v4/*: any*/)
+    "name": "contributionTypes",
+    "value": [
+      "COMMIT",
+      "PULL_REQUEST",
+      "ISSUE"
+    ]
   },
   {
     "kind": "Literal",
     "name": "first",
-    "value": 30
+    "value": 20
   },
   {
     "kind": "Literal",
-    "name": "orderBy",
-    "value": {
-      "direction": "DESC",
-      "field": "UPDATED_AT"
-    }
+    "name": "includeUserRepositories",
+    "value": true
   },
-  {
-    "kind": "Literal",
-    "name": "ownerAffiliations",
-    "value": (v4/*: any*/)
-  }
+  (v4/*: any*/)
 ],
 v6 = {
   "alias": null,
@@ -209,93 +252,192 @@ v11 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "updatedAt",
+  "name": "pushedAt",
   "storageKey": null
 },
 v12 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "stargazerCount",
+  "name": "updatedAt",
   "storageKey": null
 },
-v13 = {
+v13 = [
+  {
+    "kind": "Literal",
+    "name": "states",
+    "value": "OPEN"
+  }
+],
+v14 = [
+  {
+    "alias": null,
+    "args": null,
+    "kind": "ScalarField",
+    "name": "totalCount",
+    "storageKey": null
+  }
+],
+v15 = {
+  "alias": null,
+  "args": (v13/*: any*/),
+  "concreteType": "IssueConnection",
+  "kind": "LinkedField",
+  "name": "issues",
+  "plural": false,
+  "selections": (v14/*: any*/),
+  "storageKey": "issues(states:\"OPEN\")"
+},
+v16 = {
+  "alias": null,
+  "args": (v13/*: any*/),
+  "concreteType": "PullRequestConnection",
+  "kind": "LinkedField",
+  "name": "pullRequests",
+  "plural": false,
+  "selections": (v14/*: any*/),
+  "storageKey": "pullRequests(states:\"OPEN\")"
+},
+v17 = [
+  {
+    "alias": null,
+    "args": null,
+    "concreteType": "Repository",
+    "kind": "LinkedField",
+    "name": "nodes",
+    "plural": true,
+    "selections": [
+      (v6/*: any*/),
+      (v7/*: any*/),
+      (v2/*: any*/),
+      (v8/*: any*/),
+      (v9/*: any*/),
+      (v10/*: any*/),
+      (v11/*: any*/),
+      (v12/*: any*/),
+      (v15/*: any*/),
+      (v16/*: any*/)
+    ],
+    "storageKey": null
+  }
+],
+v18 = [
+  "OWNER",
+  "COLLABORATOR",
+  "ORGANIZATION_MEMBER"
+],
+v19 = [
+  {
+    "kind": "Literal",
+    "name": "affiliations",
+    "value": (v18/*: any*/)
+  },
+  {
+    "kind": "Literal",
+    "name": "first",
+    "value": 25
+  },
+  (v4/*: any*/),
+  {
+    "kind": "Literal",
+    "name": "ownerAffiliations",
+    "value": (v18/*: any*/)
+  }
+],
+v20 = {
   "kind": "Literal",
   "name": "first",
   "value": 15
 },
-v14 = {
+v21 = {
   "kind": "Literal",
   "name": "type",
   "value": "ISSUE"
 },
-v15 = [
-  (v13/*: any*/),
+v22 = [
+  (v20/*: any*/),
   {
     "kind": "Literal",
     "name": "query",
     "value": "is:open is:pr review-requested:@me"
   },
-  (v14/*: any*/)
+  (v21/*: any*/)
 ],
-v16 = {
+v23 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "issueCount",
   "storageKey": null
 },
-v17 = {
+v24 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "number",
   "storageKey": null
 },
-v18 = {
+v25 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "title",
   "storageKey": null
 },
-v19 = [
+v26 = {
+  "alias": null,
+  "args": null,
+  "concreteType": "Repository",
+  "kind": "LinkedField",
+  "name": "repository",
+  "plural": false,
+  "selections": [
+    (v7/*: any*/),
+    (v8/*: any*/),
+    (v2/*: any*/)
+  ],
+  "storageKey": null
+},
+v27 = [
   (v6/*: any*/),
-  (v17/*: any*/),
-  (v18/*: any*/),
-  (v11/*: any*/),
-  {
-    "alias": null,
-    "args": null,
-    "concreteType": "Repository",
-    "kind": "LinkedField",
-    "name": "repository",
-    "plural": false,
-    "selections": [
-      (v7/*: any*/),
-      (v8/*: any*/),
-      (v2/*: any*/)
-    ],
-    "storageKey": null
-  }
+  (v24/*: any*/),
+  (v25/*: any*/),
+  (v12/*: any*/),
+  (v26/*: any*/)
 ],
-v20 = [
-  (v13/*: any*/),
+v28 = [
+  (v20/*: any*/),
   {
     "kind": "Literal",
     "name": "query",
     "value": "is:open is:issue assignee:@me"
   },
-  (v14/*: any*/)
+  (v21/*: any*/)
 ],
-v21 = {
+v29 = [
+  (v20/*: any*/),
+  {
+    "kind": "Literal",
+    "name": "query",
+    "value": "is:open is:pr author:@me"
+  },
+  (v21/*: any*/)
+],
+v30 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "isDraft",
+  "storageKey": null
+},
+v31 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "__typename",
   "storageKey": null
 },
-v22 = {
+v32 = {
   "alias": null,
   "args": null,
   "concreteType": null,
@@ -303,34 +445,58 @@ v22 = {
   "name": "owner",
   "plural": false,
   "selections": [
-    (v21/*: any*/),
+    (v31/*: any*/),
     (v1/*: any*/),
     (v6/*: any*/)
   ],
   "storageKey": null
 },
-v23 = [
-  (v6/*: any*/),
-  (v17/*: any*/),
-  (v18/*: any*/),
-  (v11/*: any*/),
+v33 = [
   {
     "alias": null,
     "args": null,
     "concreteType": "Repository",
     "kind": "LinkedField",
-    "name": "repository",
-    "plural": false,
+    "name": "nodes",
+    "plural": true,
     "selections": [
+      (v6/*: any*/),
       (v7/*: any*/),
-      (v22/*: any*/),
       (v2/*: any*/),
-      (v6/*: any*/)
+      (v32/*: any*/),
+      (v9/*: any*/),
+      (v10/*: any*/),
+      (v11/*: any*/),
+      (v12/*: any*/),
+      (v15/*: any*/),
+      (v16/*: any*/)
     ],
     "storageKey": null
   }
 ],
-v24 = {
+v34 = {
+  "alias": null,
+  "args": null,
+  "concreteType": "Repository",
+  "kind": "LinkedField",
+  "name": "repository",
+  "plural": false,
+  "selections": [
+    (v7/*: any*/),
+    (v32/*: any*/),
+    (v2/*: any*/),
+    (v6/*: any*/)
+  ],
+  "storageKey": null
+},
+v35 = [
+  (v6/*: any*/),
+  (v24/*: any*/),
+  (v25/*: any*/),
+  (v12/*: any*/),
+  (v34/*: any*/)
+],
+v36 = {
   "kind": "InlineFragment",
   "selections": [
     (v6/*: any*/)
@@ -362,43 +528,33 @@ return {
             "args": (v5/*: any*/),
             "concreteType": "RepositoryConnection",
             "kind": "LinkedField",
+            "name": "repositoriesContributedTo",
+            "plural": false,
+            "selections": (v17/*: any*/),
+            "storageKey": "repositoriesContributedTo(contributionTypes:[\"COMMIT\",\"PULL_REQUEST\",\"ISSUE\"],first:20,includeUserRepositories:true,orderBy:{\"direction\":\"DESC\",\"field\":\"PUSHED_AT\"})"
+          },
+          {
+            "alias": null,
+            "args": (v19/*: any*/),
+            "concreteType": "RepositoryConnection",
+            "kind": "LinkedField",
             "name": "repositories",
             "plural": false,
-            "selections": [
-              {
-                "alias": null,
-                "args": null,
-                "concreteType": "Repository",
-                "kind": "LinkedField",
-                "name": "nodes",
-                "plural": true,
-                "selections": [
-                  (v6/*: any*/),
-                  (v7/*: any*/),
-                  (v2/*: any*/),
-                  (v8/*: any*/),
-                  (v9/*: any*/),
-                  (v10/*: any*/),
-                  (v11/*: any*/),
-                  (v12/*: any*/)
-                ],
-                "storageKey": null
-              }
-            ],
-            "storageKey": "repositories(affiliations:[\"OWNER\",\"COLLABORATOR\",\"ORGANIZATION_MEMBER\"],first:30,orderBy:{\"direction\":\"DESC\",\"field\":\"UPDATED_AT\"},ownerAffiliations:[\"OWNER\",\"COLLABORATOR\",\"ORGANIZATION_MEMBER\"])"
+            "selections": (v17/*: any*/),
+            "storageKey": "repositories(affiliations:[\"OWNER\",\"COLLABORATOR\",\"ORGANIZATION_MEMBER\"],first:25,orderBy:{\"direction\":\"DESC\",\"field\":\"PUSHED_AT\"},ownerAffiliations:[\"OWNER\",\"COLLABORATOR\",\"ORGANIZATION_MEMBER\"])"
           }
         ],
         "storageKey": null
       },
       {
         "alias": "reviewRequests",
-        "args": (v15/*: any*/),
+        "args": (v22/*: any*/),
         "concreteType": "SearchResultItemConnection",
         "kind": "LinkedField",
         "name": "search",
         "plural": false,
         "selections": [
-          (v16/*: any*/),
+          (v23/*: any*/),
           {
             "alias": null,
             "args": null,
@@ -409,7 +565,7 @@ return {
             "selections": [
               {
                 "kind": "InlineFragment",
-                "selections": (v19/*: any*/),
+                "selections": (v27/*: any*/),
                 "type": "PullRequest",
                 "abstractKey": null
               }
@@ -421,13 +577,13 @@ return {
       },
       {
         "alias": "assignedIssues",
-        "args": (v20/*: any*/),
+        "args": (v28/*: any*/),
         "concreteType": "SearchResultItemConnection",
         "kind": "LinkedField",
         "name": "search",
         "plural": false,
         "selections": [
-          (v16/*: any*/),
+          (v23/*: any*/),
           {
             "alias": null,
             "args": null,
@@ -438,7 +594,7 @@ return {
             "selections": [
               {
                 "kind": "InlineFragment",
-                "selections": (v19/*: any*/),
+                "selections": (v27/*: any*/),
                 "type": "Issue",
                 "abstractKey": null
               }
@@ -447,6 +603,42 @@ return {
           }
         ],
         "storageKey": "search(first:15,query:\"is:open is:issue assignee:@me\",type:\"ISSUE\")"
+      },
+      {
+        "alias": "myOpenPrs",
+        "args": (v29/*: any*/),
+        "concreteType": "SearchResultItemConnection",
+        "kind": "LinkedField",
+        "name": "search",
+        "plural": false,
+        "selections": [
+          (v23/*: any*/),
+          {
+            "alias": null,
+            "args": null,
+            "concreteType": null,
+            "kind": "LinkedField",
+            "name": "nodes",
+            "plural": true,
+            "selections": [
+              {
+                "kind": "InlineFragment",
+                "selections": [
+                  (v6/*: any*/),
+                  (v24/*: any*/),
+                  (v25/*: any*/),
+                  (v12/*: any*/),
+                  (v30/*: any*/),
+                  (v26/*: any*/)
+                ],
+                "type": "PullRequest",
+                "abstractKey": null
+              }
+            ],
+            "storageKey": null
+          }
+        ],
+        "storageKey": "search(first:15,query:\"is:open is:pr author:@me\",type:\"ISSUE\")"
       }
     ],
     "type": "Query",
@@ -475,30 +667,20 @@ return {
             "args": (v5/*: any*/),
             "concreteType": "RepositoryConnection",
             "kind": "LinkedField",
+            "name": "repositoriesContributedTo",
+            "plural": false,
+            "selections": (v33/*: any*/),
+            "storageKey": "repositoriesContributedTo(contributionTypes:[\"COMMIT\",\"PULL_REQUEST\",\"ISSUE\"],first:20,includeUserRepositories:true,orderBy:{\"direction\":\"DESC\",\"field\":\"PUSHED_AT\"})"
+          },
+          {
+            "alias": null,
+            "args": (v19/*: any*/),
+            "concreteType": "RepositoryConnection",
+            "kind": "LinkedField",
             "name": "repositories",
             "plural": false,
-            "selections": [
-              {
-                "alias": null,
-                "args": null,
-                "concreteType": "Repository",
-                "kind": "LinkedField",
-                "name": "nodes",
-                "plural": true,
-                "selections": [
-                  (v6/*: any*/),
-                  (v7/*: any*/),
-                  (v2/*: any*/),
-                  (v22/*: any*/),
-                  (v9/*: any*/),
-                  (v10/*: any*/),
-                  (v11/*: any*/),
-                  (v12/*: any*/)
-                ],
-                "storageKey": null
-              }
-            ],
-            "storageKey": "repositories(affiliations:[\"OWNER\",\"COLLABORATOR\",\"ORGANIZATION_MEMBER\"],first:30,orderBy:{\"direction\":\"DESC\",\"field\":\"UPDATED_AT\"},ownerAffiliations:[\"OWNER\",\"COLLABORATOR\",\"ORGANIZATION_MEMBER\"])"
+            "selections": (v33/*: any*/),
+            "storageKey": "repositories(affiliations:[\"OWNER\",\"COLLABORATOR\",\"ORGANIZATION_MEMBER\"],first:25,orderBy:{\"direction\":\"DESC\",\"field\":\"PUSHED_AT\"},ownerAffiliations:[\"OWNER\",\"COLLABORATOR\",\"ORGANIZATION_MEMBER\"])"
           },
           (v6/*: any*/)
         ],
@@ -506,13 +688,13 @@ return {
       },
       {
         "alias": "reviewRequests",
-        "args": (v15/*: any*/),
+        "args": (v22/*: any*/),
         "concreteType": "SearchResultItemConnection",
         "kind": "LinkedField",
         "name": "search",
         "plural": false,
         "selections": [
-          (v16/*: any*/),
+          (v23/*: any*/),
           {
             "alias": null,
             "args": null,
@@ -521,14 +703,14 @@ return {
             "name": "nodes",
             "plural": true,
             "selections": [
-              (v21/*: any*/),
+              (v31/*: any*/),
               {
                 "kind": "InlineFragment",
-                "selections": (v23/*: any*/),
+                "selections": (v35/*: any*/),
                 "type": "PullRequest",
                 "abstractKey": null
               },
-              (v24/*: any*/)
+              (v36/*: any*/)
             ],
             "storageKey": null
           }
@@ -537,13 +719,13 @@ return {
       },
       {
         "alias": "assignedIssues",
-        "args": (v20/*: any*/),
+        "args": (v28/*: any*/),
         "concreteType": "SearchResultItemConnection",
         "kind": "LinkedField",
         "name": "search",
         "plural": false,
         "selections": [
-          (v16/*: any*/),
+          (v23/*: any*/),
           {
             "alias": null,
             "args": null,
@@ -552,33 +734,71 @@ return {
             "name": "nodes",
             "plural": true,
             "selections": [
-              (v21/*: any*/),
+              (v31/*: any*/),
               {
                 "kind": "InlineFragment",
-                "selections": (v23/*: any*/),
+                "selections": (v35/*: any*/),
                 "type": "Issue",
                 "abstractKey": null
               },
-              (v24/*: any*/)
+              (v36/*: any*/)
             ],
             "storageKey": null
           }
         ],
         "storageKey": "search(first:15,query:\"is:open is:issue assignee:@me\",type:\"ISSUE\")"
+      },
+      {
+        "alias": "myOpenPrs",
+        "args": (v29/*: any*/),
+        "concreteType": "SearchResultItemConnection",
+        "kind": "LinkedField",
+        "name": "search",
+        "plural": false,
+        "selections": [
+          (v23/*: any*/),
+          {
+            "alias": null,
+            "args": null,
+            "concreteType": null,
+            "kind": "LinkedField",
+            "name": "nodes",
+            "plural": true,
+            "selections": [
+              (v31/*: any*/),
+              {
+                "kind": "InlineFragment",
+                "selections": [
+                  (v6/*: any*/),
+                  (v24/*: any*/),
+                  (v25/*: any*/),
+                  (v12/*: any*/),
+                  (v30/*: any*/),
+                  (v34/*: any*/)
+                ],
+                "type": "PullRequest",
+                "abstractKey": null
+              },
+              (v36/*: any*/)
+            ],
+            "storageKey": null
+          }
+        ],
+        "storageKey": "search(first:15,query:\"is:open is:pr author:@me\",type:\"ISSUE\")"
       }
     ]
   },
   "params": {
-    "cacheID": "a544b0796b4e2d4dd5a290c254159fd5",
+    "cacheID": "c42a7178f47ff9a144247e2242909ea0",
     "id": null,
     "metadata": {},
     "name": "HomePageQuery",
     "operationKind": "query",
-    "text": "query HomePageQuery {\n  rateLimit {\n    cost\n    remaining\n    limit\n    resetAt\n  }\n  viewer {\n    login\n    name\n    avatarUrl\n    repositories(first: 30, orderBy: {field: UPDATED_AT, direction: DESC}, affiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER], ownerAffiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER]) {\n      nodes {\n        id\n        nameWithOwner\n        name\n        owner {\n          __typename\n          login\n          id\n        }\n        description\n        isPrivate\n        updatedAt\n        stargazerCount\n      }\n    }\n    id\n  }\n  reviewRequests: search(query: \"is:open is:pr review-requested:@me\", type: ISSUE, first: 15) {\n    issueCount\n    nodes {\n      __typename\n      ... on PullRequest {\n        id\n        number\n        title\n        updatedAt\n        repository {\n          nameWithOwner\n          owner {\n            __typename\n            login\n            id\n          }\n          name\n          id\n        }\n      }\n      ... on Node {\n        __isNode: __typename\n        id\n      }\n    }\n  }\n  assignedIssues: search(query: \"is:open is:issue assignee:@me\", type: ISSUE, first: 15) {\n    issueCount\n    nodes {\n      __typename\n      ... on Issue {\n        id\n        number\n        title\n        updatedAt\n        repository {\n          nameWithOwner\n          owner {\n            __typename\n            login\n            id\n          }\n          name\n          id\n        }\n      }\n      ... on Node {\n        __isNode: __typename\n        id\n      }\n    }\n  }\n}\n"
+    "text": "query HomePageQuery {\n  rateLimit {\n    cost\n    remaining\n    limit\n    resetAt\n  }\n  viewer {\n    login\n    name\n    avatarUrl\n    repositoriesContributedTo(first: 20, contributionTypes: [COMMIT, PULL_REQUEST, ISSUE], orderBy: {field: PUSHED_AT, direction: DESC}, includeUserRepositories: true) {\n      nodes {\n        id\n        nameWithOwner\n        name\n        owner {\n          __typename\n          login\n          id\n        }\n        description\n        isPrivate\n        pushedAt\n        updatedAt\n        issues(states: OPEN) {\n          totalCount\n        }\n        pullRequests(states: OPEN) {\n          totalCount\n        }\n      }\n    }\n    repositories(first: 25, orderBy: {field: PUSHED_AT, direction: DESC}, affiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER], ownerAffiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER]) {\n      nodes {\n        id\n        nameWithOwner\n        name\n        owner {\n          __typename\n          login\n          id\n        }\n        description\n        isPrivate\n        pushedAt\n        updatedAt\n        issues(states: OPEN) {\n          totalCount\n        }\n        pullRequests(states: OPEN) {\n          totalCount\n        }\n      }\n    }\n    id\n  }\n  reviewRequests: search(query: \"is:open is:pr review-requested:@me\", type: ISSUE, first: 15) {\n    issueCount\n    nodes {\n      __typename\n      ... on PullRequest {\n        id\n        number\n        title\n        updatedAt\n        repository {\n          nameWithOwner\n          owner {\n            __typename\n            login\n            id\n          }\n          name\n          id\n        }\n      }\n      ... on Node {\n        __isNode: __typename\n        id\n      }\n    }\n  }\n  assignedIssues: search(query: \"is:open is:issue assignee:@me\", type: ISSUE, first: 15) {\n    issueCount\n    nodes {\n      __typename\n      ... on Issue {\n        id\n        number\n        title\n        updatedAt\n        repository {\n          nameWithOwner\n          owner {\n            __typename\n            login\n            id\n          }\n          name\n          id\n        }\n      }\n      ... on Node {\n        __isNode: __typename\n        id\n      }\n    }\n  }\n  myOpenPrs: search(query: \"is:open is:pr author:@me\", type: ISSUE, first: 15) {\n    issueCount\n    nodes {\n      __typename\n      ... on PullRequest {\n        id\n        number\n        title\n        updatedAt\n        isDraft\n        repository {\n          nameWithOwner\n          owner {\n            __typename\n            login\n            id\n          }\n          name\n          id\n        }\n      }\n      ... on Node {\n        __isNode: __typename\n        id\n      }\n    }\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "d71b4a66257fc749ffa2488c542758c1";
+(node as any).hash = "ec63ecb7774addf2be7aee22d45aed6c";
 
 export default node;
