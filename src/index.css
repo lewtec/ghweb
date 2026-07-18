@@ -54,7 +54,47 @@
   max-width: 100%;
   height: auto;
 }
-/* Open markdown links in new tab via CSS can't; fix in DOMPurify hook below if needed */
+
+/*
+ * Tailwind preflight sets `list-style: none` on all ul/ol. github-markdown-css
+ * only re-styles nested type variants, so top-level lists keep padding (margin)
+ * but lose bullets/numbers. Restore markers; keep task lists marker-free.
+ */
+.ghweb-markdown.markdown-body ul {
+  list-style-type: disc;
+}
+.ghweb-markdown.markdown-body ol {
+  list-style-type: decimal;
+}
+.ghweb-markdown.markdown-body ul ul {
+  list-style-type: circle;
+}
+.ghweb-markdown.markdown-body ul ul ul {
+  list-style-type: square;
+}
+.ghweb-markdown.markdown-body ol ol {
+  list-style-type: lower-roman;
+}
+.ghweb-markdown.markdown-body ul ul ol,
+.ghweb-markdown.markdown-body ul ol ol,
+.ghweb-markdown.markdown-body ol ul ol,
+.ghweb-markdown.markdown-body ol ol ol {
+  list-style-type: lower-alpha;
+}
+.ghweb-markdown.markdown-body li {
+  display: list-item;
+}
+.ghweb-markdown.markdown-body li::marker {
+  color: color-mix(in oklab, var(--color-base-content) 65%, transparent);
+}
+.ghweb-markdown.markdown-body ul.contains-task-list,
+.ghweb-markdown.markdown-body .task-list-item {
+  list-style-type: none;
+}
+.ghweb-markdown.markdown-body .task-list-item {
+  /* GitHub task rows use a checkbox instead of a bullet */
+  list-style: none;
+}
 
 /* Native <select> menus: keep solid (not washed out by transparent parents) */
 select.opacity-100,
