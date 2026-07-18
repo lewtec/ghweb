@@ -78,7 +78,8 @@ export function RepoPage({ owner, name }: Props) {
   const branch = repo.defaultBranchRef?.name ?? 'HEAD';
 
   return (
-    <div className="p-3 md:p-4 space-y-4 max-w-4xl">
+    <div className="w-full min-w-0 p-[clamp(0.75rem,2vw,1.25rem)]">
+    <div className="mx-auto w-full max-w-4xl space-y-4">
       <div>
         <h1 className="text-xl font-semibold">{repo.nameWithOwner}</h1>
         {repo.description ? (
@@ -149,6 +150,7 @@ export function RepoPage({ owner, name }: Props) {
           <RepoReadme htmlContext={`${owner}/${name}`} markdown={readme} />
         </article>
       ) : null}
+    </div>
     </div>
   );
 }
