@@ -35,10 +35,22 @@ export function AuthorByline({
     <div className={cn('flex items-center gap-2 min-w-0 w-full', className)}>
       <div className={cn('avatar shrink-0', !avatar && 'placeholder')}>
         <div
-          className={cn('rounded-full bg-neutral text-neutral-content', px)}
+          className={cn(
+            'rounded-full overflow-hidden',
+            px,
+            // Only placeholders need a solid fill — real avatars (users/bots)
+            // may be transparent PNGs; bg-neutral would show as a black disc.
+            avatar
+              ? 'bg-transparent'
+              : 'bg-neutral text-neutral-content',
+          )}
         >
           {avatar ? (
-            <img src={avatar} alt="" className="size-full object-cover" />
+            <img
+              src={avatar}
+              alt=""
+              className="size-full object-cover bg-transparent"
+            />
           ) : (
             <span className="text-[0.65em]">
               {login[0]?.toUpperCase() ?? '?'}

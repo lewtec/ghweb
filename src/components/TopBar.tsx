@@ -151,8 +151,12 @@ export function TopBar({
               className="btn btn-ghost btn-sm btn-circle avatar placeholder"
             >
               {viewerAvatarUrl ? (
-                <div className="w-8 rounded-full">
-                  <img src={viewerAvatarUrl} alt="" />
+                <div className="w-8 rounded-full overflow-hidden bg-transparent">
+                  <img
+                    src={viewerAvatarUrl}
+                    alt=""
+                    className="bg-transparent"
+                  />
                 </div>
               ) : (
                 <div className="bg-neutral text-neutral-content w-8 rounded-full">

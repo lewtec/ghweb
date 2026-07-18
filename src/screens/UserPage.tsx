@@ -86,8 +86,8 @@ export function UserPage({ login }: Props) {
     <div className="w-full min-w-0 p-[clamp(0.75rem,2vw,1.25rem)] max-w-5xl mx-auto space-y-4">
       <div className="flex flex-wrap items-start gap-4">
         <div className="avatar shrink-0">
-          <div className="w-20 rounded-full ring ring-base-300">
-            <img src={owner.avatarUrl} alt="" />
+          <div className="w-20 rounded-full ring ring-base-300 overflow-hidden bg-transparent">
+            <img src={owner.avatarUrl} alt="" className="bg-transparent" />
           </div>
         </div>
         <div className="min-w-0 flex-1 space-y-1">
