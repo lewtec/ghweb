@@ -40,24 +40,24 @@ export function PullsListPage({ owner, name }: Props) {
   const prs = data.repository?.pullRequests.nodes ?? [];
 
   return (
-    <div className="p-3 md:p-4 max-w-3xl">
+    <div className="p-3 md:p-4 w-full">
       <h1 className="text-lg font-semibold mb-3">Pull requests</h1>
-      <ul className="card bg-base-100 border border-base-300 divide-y divide-base-300 dense-list">
+      <ul className="card bg-base-100 border border-base-300 divide-y divide-base-300 dense-list w-full">
         {prs.map((pr) => {
           if (!pr) return null;
           return (
-            <li key={pr.id} className="dense-row">
+            <li key={pr.id} className="dense-row w-full">
               <div className="flex items-start gap-2 w-full">
                 <Link
                   to="/$owner/$name/pull/$number"
                   params={{ owner, name, number: String(pr.number) }}
-                  className="link link-hover font-medium min-w-0 flex-1"
+                  className="link link-hover font-medium min-w-0 flex-1 pr-2"
                 >
                   <span className="opacity-50 font-normal">#{pr.number}</span>{' '}
                   {pr.title}
                 </Link>
                 <PrStateBadge
-                  className="shrink-0 ml-auto"
+                  className="shrink-0"
                   state={pr.state}
                   merged={pr.merged}
                   isDraft={pr.isDraft}
