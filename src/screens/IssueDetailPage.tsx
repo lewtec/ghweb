@@ -11,6 +11,7 @@ import { useLiveQuery } from '@/lib/useLiveQuery';
 import { ExternalLink } from '@/components/ExternalLink';
 import { AuthorByline } from '@/components/AuthorByline';
 import { GithubMarkdown } from '@/components/GithubMarkdown';
+import { IssueStateBadge } from '@/components/IssueStateBadge';
 
 const query = graphql`
   query IssueDetailPageQuery($owner: String!, $name: String!, $number: Int!) {
@@ -175,13 +176,13 @@ export function IssueDetailPage({ owner, name, number }: Props) {
     issue.comments?.edges?.map((e) => e?.node).filter(Boolean) ?? [];
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-3rem)] max-w-3xl mx-auto w-full">
-      <div className="p-3 md:p-4 space-y-3 flex-1 pb-24">
-        <div className="flex flex-wrap items-start gap-2">
+    <div className="flex flex-col min-h-[calc(100vh-3rem)] w-full">
+      <div className="w-full min-w-0 flex-1 space-y-3 p-[clamp(0.75rem,2vw,1.25rem)]">
+        <div className="flex items-start gap-2 w-full min-w-0">
           {editingTitle ? (
-            <div className="flex flex-wrap gap-2 grow w-full">
+            <div className="flex flex-wrap gap-2 grow w-full min-w-0">
               <input
-                className="input input-bordered input-sm flex-1 min-w-[12rem]"
+                className="input input-bordered input-sm flex-1 min-w-0"
                 value={titleDraft}
                 onChange={(e) => setTitleDraft(e.target.value)}
               />
@@ -190,11 +191,11 @@ export function IssueDetailPage({ owner, name, number }: Props) {
                 className="btn btn-sm btn-primary"
                 disabled={titleInFlight || !titleDraft.trim()}
                 onClick={() => {
-                  const t = titleDraft.trim();
+                  const next = titleDraft.trim();
                   commitTitle({
-                    variables: { id: issue.id, title: t },
+                    variables: { id: issue.id, title: next },
                     optimisticResponse: {
-                      updateIssue: { issue: { id: issue.id, title: t } },
+                      updateIssue: { issue: { id: issue.id, title: next } },
                     },
                     onCompleted: () => setEditingTitle(false),
                     onError: (e) => toast.error('Title update failed', e.message),
@@ -212,7 +213,7 @@ export function IssueDetailPage({ owner, name, number }: Props) {
               </button>
             </div>
           ) : (
-            <h1 className="text-xl font-semibold grow">
+            <h1 className="text-xl font-semibold min-w-0 flex-1">
               <button
                 type="button"
                 className="text-left hover:underline"
@@ -227,18 +228,79 @@ export function IssueDetailPage({ owner, name, number }: Props) {
               <span className="opacity-50 font-normal">#{issue.number}</span>
             </h1>
           )}
-          <span className={`badge ${open ? 'badge-success' : 'badge-ghost'}`}>
-            {issue.state}
-          </span>
+          <IssueStateBadge className="shrink-0" state={issue.state} />
         </div>
 
-        <button
-          type="button"
-          className="btn btn-xs btn-ghost"
-          onClick={() => setMetaOpen((v) => !v)}
-        >
-          {metaOpen ? 'Hide' : 'Show'} labels & assignees
-        </button>
+        <div className="flex flex-wrap items-end gap-2 w-full min-w-0 border-b border-base-300">
+          <div className="tabs tabs-bordered min-w-0 flex-1">
+            <span className="tab tab-active" aria-current="page">
+              Conversation
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5 shrink-0 ms-auto pb-1">
+            <button
+              type="button"
+              className="btn btn-sm btn-ghost"
+              onClick={() => setMetaOpen((v) => !v)}
+            >
+              {metaOpen ? 'Hide details' : 'Details'}
+            </button>
+            {open ? (
+              <button
+                type="button"
+                className="btn btn-sm"
+                disabled={closeInFlight}
+                onClick={() => {
+                  commitClose({
+                    variables: { id: issue.id },
+                    optimisticResponse: {
+                      closeIssue: {
+                        issue: {
+                          id: issue.id,
+                          state: 'CLOSED',
+                          stateReason: 'COMPLETED',
+                          closedAt: new Date().toISOString(),
+                        },
+                      },
+                    },
+                    onError: (e) => toast.error('Close failed', e.message),
+                  });
+                }}
+              >
+                Close
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-sm btn-primary"
+                disabled={reopenInFlight}
+                onClick={() => {
+                  commitReopen({
+                    variables: { id: issue.id },
+                    optimisticResponse: {
+                      reopenIssue: {
+                        issue: {
+                          id: issue.id,
+                          state: 'OPEN',
+                          stateReason: null,
+                          closedAt: null,
+                        },
+                      },
+                    },
+                    onError: (e) => toast.error('Reopen failed', e.message),
+                  });
+                }}
+              >
+                Reopen
+              </button>
+            )}
+            <ExternalLink className="btn btn-sm btn-ghost" href={issue.url}>
+              GitHub
+            </ExternalLink>
+          </div>
+        </div>
+
+        <div className="w-full max-w-[min(100%,48rem)] mx-auto space-y-3 min-w-0">
         {metaOpen ? (
           <div className="text-sm space-y-2 border border-base-300 rounded-box p-3">
             <div className="flex flex-wrap gap-1">
@@ -265,9 +327,6 @@ export function IssueDetailPage({ owner, name, number }: Props) {
                 <span className="opacity-50 text-xs">No assignees</span>
               ) : null}
             </div>
-            <ExternalLink className="link text-xs" href={issue.url}>
-              Open on GitHub
-            </ExternalLink>
           </div>
         ) : (
           <div className="text-xs opacity-60">
@@ -385,61 +444,7 @@ export function IssueDetailPage({ owner, name, number }: Props) {
             Comment
           </button>
         </div>
-      </div>
-
-      <div className="sticky bottom-0 border-t border-base-300 bg-base-100 p-2 flex gap-2">
-        {open ? (
-          <button
-            type="button"
-            className="btn btn-sm"
-            disabled={closeInFlight}
-            onClick={() => {
-              commitClose({
-                variables: { id: issue.id },
-                optimisticResponse: {
-                  closeIssue: {
-                    issue: {
-                      id: issue.id,
-                      state: 'CLOSED',
-                      stateReason: 'COMPLETED',
-                      closedAt: new Date().toISOString(),
-                    },
-                  },
-                },
-                onError: (e) => toast.error('Close failed', e.message),
-              });
-            }}
-          >
-            Close
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="btn btn-sm"
-            disabled={reopenInFlight}
-            onClick={() => {
-              commitReopen({
-                variables: { id: issue.id },
-                optimisticResponse: {
-                  reopenIssue: {
-                    issue: {
-                      id: issue.id,
-                      state: 'OPEN',
-                      stateReason: null,
-                      closedAt: null,
-                    },
-                  },
-                },
-                onError: (e) => toast.error('Reopen failed', e.message),
-              });
-            }}
-          >
-            Reopen
-          </button>
-        )}
-        <ExternalLink className="btn btn-sm btn-ghost ml-auto" href={issue.url}>
-          GitHub
-        </ExternalLink>
+        </div>
       </div>
     </div>
   );
