@@ -1,5 +1,5 @@
 import { Command } from 'cmdk';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import {
   CircleDot,
@@ -48,6 +48,13 @@ export function CommandPalette({ open, onOpenChange }: Props) {
   const [pathLoading, setPathLoading] = useState(false);
   /** Controlled selection so Enter always hits the first match after list updates. */
   const [selected, setSelected] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  // Refs so capture-phase Tab handler always sees latest list/query
+  const qRef = useRef(q);
+  const itemsRef = useRef<GotoCandidate[]>([]);
+  const selectedRef = useRef(selected);
+  qRef.current = q;
+  selectedRef.current = selected;
 
   const ctx = useMemo(() => buildGotoContext(pathname), [pathname]);
 
@@ -119,6 +126,7 @@ export function CommandPalette({ open, onOpenChange }: Props) {
     const rest = syncItems.filter((i) => !seen.has(i.id));
     return [...pathItems, ...rest];
   }, [pathItems, syncItems]);
+  itemsRef.current = items;
 
   const groups = useMemo(() => groupCandidates(items), [items]);
 
@@ -152,16 +160,28 @@ export function CommandPalette({ open, onOpenChange }: Props) {
     }
   };
 
-  const onTabComplete = (e: React.KeyboardEvent) => {
-    if (e.key !== 'Tab' || e.altKey || e.metaKey || e.ctrlKey) return;
+  /** Capture-phase: always swallow Tab so focus never leaves the input. */
+  const onTabCapture = (e: React.KeyboardEvent) => {
+    if (e.key !== 'Tab') return;
     e.preventDefault();
     e.stopPropagation();
-    const next = tabCompleteQuery(q, items, selected);
+    const next = tabCompleteQuery(
+      qRef.current,
+      itemsRef.current,
+      selectedRef.current,
+    );
     if (next != null) setQ(next);
+    // Re-focus after React updates / browser tab order attempts
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
   };
 
   return (
-    <div className="modal modal-open">
+    <div
+      className="modal modal-open"
+      onKeyDownCapture={onTabCapture}
+    >
       <div className="modal-box p-0 overflow-hidden w-full max-w-lg">
         <Command
           label="Command palette"
@@ -170,11 +190,13 @@ export function CommandPalette({ open, onOpenChange }: Props) {
           value={selected}
           onValueChange={setSelected}
           loop
+          onKeyDownCapture={onTabCapture}
         >
           <Command.Input
+            ref={inputRef}
             value={q}
             onValueChange={setQ}
-            onKeyDown={onTabComplete}
+            onKeyDown={onTabCapture}
             placeholder={
               ctx.pathNav
                 ? 'Tab expands path · /pr → PRs  ·  Enter opens'
@@ -232,6 +254,7 @@ export function CommandPalette({ open, onOpenChange }: Props) {
       </div>
       <button
         type="button"
+        tabIndex={-1}
         className="modal-backdrop bg-black/40"
         onClick={() => onOpenChange(false)}
         aria-label="Close"
