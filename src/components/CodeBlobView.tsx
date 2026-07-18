@@ -131,13 +131,13 @@ export function CodeBlobView({
   return (
     <div
       className={cn(
-        'ghweb-code w-full min-w-0 flex-1 border border-base-300 rounded-box overflow-hidden',
+        'ghweb-code w-full min-w-0 h-full min-h-0 flex flex-col border border-base-300 rounded-box overflow-hidden',
         theme === 'dark' ? 'ghweb-code-dark' : 'ghweb-code-light',
         className,
       )}
       data-theme-code={theme}
     >
-      <div className="overflow-auto max-h-[calc(100vh-6.5rem)] w-full">
+      <div className="flex-1 min-h-0 min-w-0 overflow-auto w-full">
         <table className="w-full border-collapse text-xs font-mono leading-5">
           <tbody>
             {lines.map((html, i) => {
@@ -154,7 +154,10 @@ export function CodeBlobView({
                   )}
                 >
                   <td className="ghweb-code-gutter select-none align-top sticky left-0 z-[1] w-px whitespace-nowrap">
-                    <div className="relative" ref={menuLine === n ? menuRef : undefined}>
+                    <div
+                      className="relative"
+                      ref={menuLine === n ? menuRef : undefined}
+                    >
                       <button
                         type="button"
                         className="ghweb-code-linenum block w-full text-right px-2 py-0 min-w-[2.5rem] hover:text-primary cursor-pointer"
@@ -196,7 +199,6 @@ export function CodeBlobView({
                   <td className="ghweb-code-content px-3 py-0 align-top whitespace-pre">
                     <code
                       className="hljs bg-transparent"
-                      // highlighted spans only
                       dangerouslySetInnerHTML={{
                         __html: html || ' ',
                       }}

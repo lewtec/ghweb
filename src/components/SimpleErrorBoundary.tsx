@@ -1,7 +1,8 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { ErrorBanner } from './ErrorBanner';
+import { cn } from '@/lib/cls';
 
-type Props = { children: ReactNode };
+type Props = { children: ReactNode; className?: string };
 type State = { error: Error | null };
 
 export class SimpleErrorBoundary extends Component<Props, State> {
@@ -18,7 +19,7 @@ export class SimpleErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.error) {
       return (
-        <div className="p-4">
+        <div className={cn('p-4', this.props.className)}>
           <ErrorBanner
             title="Something failed"
             detail={this.state.error.message}
@@ -27,6 +28,11 @@ export class SimpleErrorBoundary extends Component<Props, State> {
         </div>
       );
     }
-    return this.props.children;
+    // Wrapper preserves flex height chain (h-full / flex-1 min-h-0) for full-viewport pages
+    return (
+      <div className={cn('min-w-0', this.props.className)}>
+        {this.props.children}
+      </div>
+    );
   }
 }

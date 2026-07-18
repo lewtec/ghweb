@@ -67,7 +67,7 @@ function ViewerChromeInner({ children }: { children: ReactNode }) {
   const viewer = useLazyLoadQuery<routerViewerQuery>(viewerQuery, {});
 
   return (
-    <div className="min-h-screen flex flex-col w-full min-w-0">
+    <div className="h-dvh max-h-dvh flex flex-col w-full min-w-0 overflow-hidden">
       <TopBar
         onOpenPalette={() => setPaletteOpen(true)}
         viewerLogin={viewer.viewer.login}
@@ -78,9 +78,17 @@ function ViewerChromeInner({ children }: { children: ReactNode }) {
         }}
       />
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
-      <main className="flex-1 min-w-0 overflow-auto w-full">
-        <Suspense fallback={<LoadingBlock />}>
-          <SimpleErrorBoundary>{children}</SimpleErrorBoundary>
+      <main className="flex-1 min-h-0 min-w-0 overflow-auto w-full flex flex-col">
+        <Suspense
+          fallback={
+            <div className="flex-1 min-h-0 flex items-center justify-center">
+              <LoadingBlock />
+            </div>
+          }
+        >
+          <SimpleErrorBoundary className="flex-1 min-h-0 min-w-0 flex flex-col">
+            {children}
+          </SimpleErrorBoundary>
         </Suspense>
       </main>
     </div>
@@ -88,7 +96,17 @@ function ViewerChromeInner({ children }: { children: ReactNode }) {
 }
 
 function Suspend({ children }: { children: ReactNode }) {
-  return <Suspense fallback={<LoadingBlock />}>{children}</Suspense>;
+  return (
+    <Suspense
+      fallback={
+        <div className="flex-1 min-h-0 flex items-center justify-center p-4">
+          <LoadingBlock />
+        </div>
+      }
+    >
+      <div className="flex-1 min-h-0 min-w-0 flex flex-col">{children}</div>
+    </Suspense>
+  );
 }
 
 const rootRoute = createRootRoute({
@@ -131,7 +149,9 @@ const repoLayoutRoute = createRoute({
   component: function RepoLayout() {
     return (
       <ViewerChrome>
-        <Outlet />
+        <div className="flex-1 min-h-0 min-w-0 flex flex-col">
+          <Outlet />
+        </div>
       </ViewerChrome>
     );
   },

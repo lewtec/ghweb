@@ -188,8 +188,8 @@ export function CodeBrowserPage({ owner, name, refName, path, mode }: Props) {
     const isMd = /\.(md|markdown|mdx)$/i.test(path);
 
     return (
-      <div className="flex flex-col w-full min-w-0 min-h-[calc(100vh-3rem)]">
-        <div className="flex flex-wrap items-center gap-2 px-[clamp(0.75rem,2vw,1.25rem)] py-2 border-b border-base-300 bg-base-100 sticky top-0 z-10">
+      <div className="flex flex-col w-full min-w-0 h-full min-h-0 overflow-hidden">
+        <div className="flex flex-wrap items-center gap-2 px-[clamp(0.75rem,2vw,1.25rem)] py-2 border-b border-base-300 bg-base-100 shrink-0 z-10">
           <div className="text-sm font-mono break-all min-w-0 flex-1 opacity-80">
             {refName}:{path}
           </div>
@@ -197,10 +197,12 @@ export function CodeBrowserPage({ owner, name, refName, path, mode }: Props) {
             GitHub
           </ExternalLink>
         </div>
-        <div className="flex-1 min-w-0 p-[clamp(0.5rem,1.5vw,1rem)] w-full">
+        <div className="flex-1 min-h-0 min-w-0 w-full flex flex-col overflow-hidden">
           {isMd ? (
-            <div className="border border-base-300 rounded-box p-[clamp(0.75rem,2vw,1.25rem)] w-full min-w-0 max-w-[min(100%,48rem)] mx-auto">
-              <MarkdownBlob text={text} context={`${owner}/${name}`} />
+            <div className="flex-1 min-h-0 overflow-auto p-[clamp(0.75rem,2vw,1.25rem)]">
+              <div className="border border-base-300 rounded-box p-[clamp(0.75rem,2vw,1.25rem)] w-full min-w-0 max-w-[min(100%,48rem)] mx-auto">
+                <MarkdownBlob text={text} context={`${owner}/${name}`} />
+              </div>
             </div>
           ) : (
             <CodeBlobView
@@ -209,6 +211,7 @@ export function CodeBrowserPage({ owner, name, refName, path, mode }: Props) {
               refName={refName}
               path={path}
               text={text}
+              className="flex-1 min-h-0 rounded-none border-0 border-t-0"
             />
           )}
         </div>
