@@ -9,6 +9,10 @@ import {
   type WorkSignal,
 } from '@/lib/activeRepos';
 
+/**
+ * Keep this query CHEAP. Nested issues/PRs totalCount on many repos blows
+ * GitHub "Resource limits for this query exceeded".
+ */
 const query = graphql`
   query HomePageQuery {
     rateLimit {
@@ -22,7 +26,7 @@ const query = graphql`
       name
       avatarUrl
       repositoriesContributedTo(
-        first: 20
+        first: 12
         contributionTypes: [COMMIT, PULL_REQUEST, ISSUE]
         orderBy: { field: PUSHED_AT, direction: DESC }
         includeUserRepositories: true
@@ -38,16 +42,10 @@ const query = graphql`
           isPrivate
           pushedAt
           updatedAt
-          issues(states: OPEN) {
-            totalCount
-          }
-          pullRequests(states: OPEN) {
-            totalCount
-          }
         }
       }
       repositories(
-        first: 25
+        first: 15
         orderBy: { field: PUSHED_AT, direction: DESC }
         affiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER]
         ownerAffiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER]
@@ -63,19 +61,13 @@ const query = graphql`
           isPrivate
           pushedAt
           updatedAt
-          issues(states: OPEN) {
-            totalCount
-          }
-          pullRequests(states: OPEN) {
-            totalCount
-          }
         }
       }
     }
     reviewRequests: search(
       query: "is:open is:pr review-requested:@me"
       type: ISSUE
-      first: 15
+      first: 10
     ) {
       issueCount
       nodes {
@@ -97,7 +89,7 @@ const query = graphql`
     assignedIssues: search(
       query: "is:open is:issue assignee:@me"
       type: ISSUE
-      first: 15
+      first: 10
     ) {
       issueCount
       nodes {
@@ -119,7 +111,7 @@ const query = graphql`
     myOpenPrs: search(
       query: "is:open is:pr author:@me"
       type: ISSUE
-      first: 15
+      first: 10
     ) {
       issueCount
       nodes {
@@ -163,8 +155,6 @@ function toRepoRef(
     readonly isPrivate?: boolean | null;
     readonly pushedAt?: string | null;
     readonly updatedAt?: string | null;
-    readonly issues?: { readonly totalCount: number } | null;
-    readonly pullRequests?: { readonly totalCount: number } | null;
   } | null | undefined,
 ): RepoRef | null {
   if (!r) return null;
@@ -177,8 +167,6 @@ function toRepoRef(
     isPrivate: r.isPrivate,
     pushedAt: r.pushedAt ?? null,
     updatedAt: r.updatedAt ?? null,
-    openIssues: r.issues?.totalCount ?? null,
-    openPrs: r.pullRequests?.totalCount ?? null,
   };
 }
 
@@ -195,30 +183,42 @@ export function HomePage() {
 
   const { active, more } = useMemo(() => {
     const signals: WorkSignal[] = [];
+    const openIssuesByRepo = new Map<string, number>();
+    const openPrsByRepo = new Map<string, number>();
+
+    const bump = (map: Map<string, number>, key: string) => {
+      map.set(key, (map.get(key) ?? 0) + 1);
+    };
 
     for (const n of data.assignedIssues.nodes ?? []) {
       if (!n || !('repository' in n) || !n.repository) continue;
+      const k = n.repository.nameWithOwner;
       signals.push({
-        nameWithOwner: n.repository.nameWithOwner,
+        nameWithOwner: k,
         kind: 'assigned',
         at: n.updatedAt,
       });
+      bump(openIssuesByRepo, k);
     }
     for (const n of data.reviewRequests.nodes ?? []) {
       if (!n || !('repository' in n) || !n.repository) continue;
+      const k = n.repository.nameWithOwner;
       signals.push({
-        nameWithOwner: n.repository.nameWithOwner,
+        nameWithOwner: k,
         kind: 'review',
         at: n.updatedAt,
       });
+      bump(openPrsByRepo, k);
     }
     for (const n of data.myOpenPrs.nodes ?? []) {
       if (!n || !('repository' in n) || !n.repository) continue;
+      const k = n.repository.nameWithOwner;
       signals.push({
-        nameWithOwner: n.repository.nameWithOwner,
+        nameWithOwner: k,
         kind: 'authored_pr',
         at: n.updatedAt,
       });
+      bump(openPrsByRepo, k);
     }
 
     const contributed = (data.viewer.repositoriesContributedTo.nodes ?? [])
@@ -233,7 +233,12 @@ export function HomePage() {
       contributed,
       pushed,
       limit: 12,
-    });
+    }).map((r) => ({
+      ...r,
+      // Only counts visible in triage (not full-repo totals — those are expensive)
+      openIssues: openIssuesByRepo.get(r.nameWithOwner) ?? null,
+      openPrs: openPrsByRepo.get(r.nameWithOwner) ?? null,
+    }));
     const activeSet = activeKeys(activeList);
     const moreList = pushed.filter((r) => !activeSet.has(r.nameWithOwner));
 
@@ -371,8 +376,8 @@ export function HomePage() {
           Active repositories
         </h2>
         <p className="text-xs opacity-50 mb-2">
-          Ranked from your open work (assigned, reviews, your PRs), recent
-          contributions, and pushes — not every org membership.
+          Ranked from your open work, recent contributions, and pushes. Open
+          counts below only reflect items in triage above (not full-repo totals).
         </p>
         <ul className="card bg-base-100 border border-base-300 divide-y divide-base-300 w-full">
           {active.length ? (
@@ -396,11 +401,12 @@ export function HomePage() {
                     {signalLabel(r.signals)}
                   </span>
                 ) : null}
-                {r.openIssues != null || r.openPrs != null ? (
+                {(r.openIssues != null && r.openIssues > 0) ||
+                (r.openPrs != null && r.openPrs > 0) ? (
                   <span className="text-xs opacity-60">
-                    {r.openIssues != null ? `${r.openIssues} issues` : null}
-                    {r.openIssues != null && r.openPrs != null ? ' · ' : null}
-                    {r.openPrs != null ? `${r.openPrs} PRs` : null}
+                    {r.openIssues ? `${r.openIssues} assigned` : null}
+                    {r.openIssues && r.openPrs ? ' · ' : null}
+                    {r.openPrs ? `${r.openPrs} open PRs (yours/reviews)` : null}
                   </span>
                 ) : null}
                 <span className="flex gap-2 text-xs ml-auto">

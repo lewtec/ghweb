@@ -112,9 +112,21 @@ function createFetch(opts: GitHubClientOptions = {}): FetchFunction {
       }
 
       if (json.errors?.length) {
-        const msg = json.errors.map((e) => e.message).join('; ');
+        const unique = [...new Set(json.errors.map((e) => e.message ?? 'error'))];
+        const msg = unique.join('; ');
+        const resourceLimited = unique.some((m) =>
+          /resource limits/i.test(m),
+        );
         if (!('data' in json) || json.data == null) {
-          throw new Error(msg);
+          throw new Error(
+            resourceLimited
+              ? `GitHub GraphQL query too expensive (resource limits). ${msg}`
+              : msg,
+          );
+        }
+        // Partial data: still return so screens can render; log once
+        if (resourceLimited) {
+          console.warn('GitHub GraphQL resource limits (partial data):', msg);
         }
       }
 

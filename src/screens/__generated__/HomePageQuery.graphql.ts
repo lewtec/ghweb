@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<12683c39ed6addb91e0cd6f7edd4a589>>
+ * @generated SignedSource<<e66553056587f6176a162a1c253cc022>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -75,16 +75,10 @@ export type HomePageQuery$data = {
         readonly description: string | null | undefined;
         readonly id: string;
         readonly isPrivate: boolean;
-        readonly issues: {
-          readonly totalCount: number;
-        };
         readonly name: string;
         readonly nameWithOwner: string;
         readonly owner: {
           readonly login: string;
-        };
-        readonly pullRequests: {
-          readonly totalCount: number;
         };
         readonly pushedAt: any | null | undefined;
         readonly updatedAt: any;
@@ -95,16 +89,10 @@ export type HomePageQuery$data = {
         readonly description: string | null | undefined;
         readonly id: string;
         readonly isPrivate: boolean;
-        readonly issues: {
-          readonly totalCount: number;
-        };
         readonly name: string;
         readonly nameWithOwner: string;
         readonly owner: {
           readonly login: string;
-        };
-        readonly pullRequests: {
-          readonly totalCount: number;
         };
         readonly pushedAt: any | null | undefined;
         readonly updatedAt: any;
@@ -199,7 +187,7 @@ v5 = [
   {
     "kind": "Literal",
     "name": "first",
-    "value": 20
+    "value": 12
   },
   {
     "kind": "Literal",
@@ -264,42 +252,6 @@ v12 = {
 },
 v13 = [
   {
-    "kind": "Literal",
-    "name": "states",
-    "value": "OPEN"
-  }
-],
-v14 = [
-  {
-    "alias": null,
-    "args": null,
-    "kind": "ScalarField",
-    "name": "totalCount",
-    "storageKey": null
-  }
-],
-v15 = {
-  "alias": null,
-  "args": (v13/*: any*/),
-  "concreteType": "IssueConnection",
-  "kind": "LinkedField",
-  "name": "issues",
-  "plural": false,
-  "selections": (v14/*: any*/),
-  "storageKey": "issues(states:\"OPEN\")"
-},
-v16 = {
-  "alias": null,
-  "args": (v13/*: any*/),
-  "concreteType": "PullRequestConnection",
-  "kind": "LinkedField",
-  "name": "pullRequests",
-  "plural": false,
-  "selections": (v14/*: any*/),
-  "storageKey": "pullRequests(states:\"OPEN\")"
-},
-v17 = [
-  {
     "alias": null,
     "args": null,
     "concreteType": "Repository",
@@ -314,77 +266,75 @@ v17 = [
       (v9/*: any*/),
       (v10/*: any*/),
       (v11/*: any*/),
-      (v12/*: any*/),
-      (v15/*: any*/),
-      (v16/*: any*/)
+      (v12/*: any*/)
     ],
     "storageKey": null
   }
 ],
-v18 = [
+v14 = [
   "OWNER",
   "COLLABORATOR",
   "ORGANIZATION_MEMBER"
 ],
-v19 = [
+v15 = [
   {
     "kind": "Literal",
     "name": "affiliations",
-    "value": (v18/*: any*/)
+    "value": (v14/*: any*/)
   },
   {
     "kind": "Literal",
     "name": "first",
-    "value": 25
+    "value": 15
   },
   (v4/*: any*/),
   {
     "kind": "Literal",
     "name": "ownerAffiliations",
-    "value": (v18/*: any*/)
+    "value": (v14/*: any*/)
   }
 ],
-v20 = {
+v16 = {
   "kind": "Literal",
   "name": "first",
-  "value": 15
+  "value": 10
 },
-v21 = {
+v17 = {
   "kind": "Literal",
   "name": "type",
   "value": "ISSUE"
 },
-v22 = [
-  (v20/*: any*/),
+v18 = [
+  (v16/*: any*/),
   {
     "kind": "Literal",
     "name": "query",
     "value": "is:open is:pr review-requested:@me"
   },
-  (v21/*: any*/)
+  (v17/*: any*/)
 ],
-v23 = {
+v19 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "issueCount",
   "storageKey": null
 },
-v24 = {
+v20 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "number",
   "storageKey": null
 },
-v25 = {
+v21 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "title",
   "storageKey": null
 },
-v26 = {
+v22 = {
   "alias": null,
   "args": null,
   "concreteType": "Repository",
@@ -398,46 +348,46 @@ v26 = {
   ],
   "storageKey": null
 },
-v27 = [
+v23 = [
   (v6/*: any*/),
-  (v24/*: any*/),
-  (v25/*: any*/),
-  (v12/*: any*/),
-  (v26/*: any*/)
-],
-v28 = [
   (v20/*: any*/),
+  (v21/*: any*/),
+  (v12/*: any*/),
+  (v22/*: any*/)
+],
+v24 = [
+  (v16/*: any*/),
   {
     "kind": "Literal",
     "name": "query",
     "value": "is:open is:issue assignee:@me"
   },
-  (v21/*: any*/)
+  (v17/*: any*/)
 ],
-v29 = [
-  (v20/*: any*/),
+v25 = [
+  (v16/*: any*/),
   {
     "kind": "Literal",
     "name": "query",
     "value": "is:open is:pr author:@me"
   },
-  (v21/*: any*/)
+  (v17/*: any*/)
 ],
-v30 = {
+v26 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "isDraft",
   "storageKey": null
 },
-v31 = {
+v27 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "__typename",
   "storageKey": null
 },
-v32 = {
+v28 = {
   "alias": null,
   "args": null,
   "concreteType": null,
@@ -445,13 +395,13 @@ v32 = {
   "name": "owner",
   "plural": false,
   "selections": [
-    (v31/*: any*/),
+    (v27/*: any*/),
     (v1/*: any*/),
     (v6/*: any*/)
   ],
   "storageKey": null
 },
-v33 = [
+v29 = [
   {
     "alias": null,
     "args": null,
@@ -463,18 +413,16 @@ v33 = [
       (v6/*: any*/),
       (v7/*: any*/),
       (v2/*: any*/),
-      (v32/*: any*/),
+      (v28/*: any*/),
       (v9/*: any*/),
       (v10/*: any*/),
       (v11/*: any*/),
-      (v12/*: any*/),
-      (v15/*: any*/),
-      (v16/*: any*/)
+      (v12/*: any*/)
     ],
     "storageKey": null
   }
 ],
-v34 = {
+v30 = {
   "alias": null,
   "args": null,
   "concreteType": "Repository",
@@ -483,20 +431,20 @@ v34 = {
   "plural": false,
   "selections": [
     (v7/*: any*/),
-    (v32/*: any*/),
+    (v28/*: any*/),
     (v2/*: any*/),
     (v6/*: any*/)
   ],
   "storageKey": null
 },
-v35 = [
+v31 = [
   (v6/*: any*/),
-  (v24/*: any*/),
-  (v25/*: any*/),
+  (v20/*: any*/),
+  (v21/*: any*/),
   (v12/*: any*/),
-  (v34/*: any*/)
+  (v30/*: any*/)
 ],
-v36 = {
+v32 = {
   "kind": "InlineFragment",
   "selections": [
     (v6/*: any*/)
@@ -530,31 +478,31 @@ return {
             "kind": "LinkedField",
             "name": "repositoriesContributedTo",
             "plural": false,
-            "selections": (v17/*: any*/),
-            "storageKey": "repositoriesContributedTo(contributionTypes:[\"COMMIT\",\"PULL_REQUEST\",\"ISSUE\"],first:20,includeUserRepositories:true,orderBy:{\"direction\":\"DESC\",\"field\":\"PUSHED_AT\"})"
+            "selections": (v13/*: any*/),
+            "storageKey": "repositoriesContributedTo(contributionTypes:[\"COMMIT\",\"PULL_REQUEST\",\"ISSUE\"],first:12,includeUserRepositories:true,orderBy:{\"direction\":\"DESC\",\"field\":\"PUSHED_AT\"})"
           },
           {
             "alias": null,
-            "args": (v19/*: any*/),
+            "args": (v15/*: any*/),
             "concreteType": "RepositoryConnection",
             "kind": "LinkedField",
             "name": "repositories",
             "plural": false,
-            "selections": (v17/*: any*/),
-            "storageKey": "repositories(affiliations:[\"OWNER\",\"COLLABORATOR\",\"ORGANIZATION_MEMBER\"],first:25,orderBy:{\"direction\":\"DESC\",\"field\":\"PUSHED_AT\"},ownerAffiliations:[\"OWNER\",\"COLLABORATOR\",\"ORGANIZATION_MEMBER\"])"
+            "selections": (v13/*: any*/),
+            "storageKey": "repositories(affiliations:[\"OWNER\",\"COLLABORATOR\",\"ORGANIZATION_MEMBER\"],first:15,orderBy:{\"direction\":\"DESC\",\"field\":\"PUSHED_AT\"},ownerAffiliations:[\"OWNER\",\"COLLABORATOR\",\"ORGANIZATION_MEMBER\"])"
           }
         ],
         "storageKey": null
       },
       {
         "alias": "reviewRequests",
-        "args": (v22/*: any*/),
+        "args": (v18/*: any*/),
         "concreteType": "SearchResultItemConnection",
         "kind": "LinkedField",
         "name": "search",
         "plural": false,
         "selections": [
-          (v23/*: any*/),
+          (v19/*: any*/),
           {
             "alias": null,
             "args": null,
@@ -565,7 +513,7 @@ return {
             "selections": [
               {
                 "kind": "InlineFragment",
-                "selections": (v27/*: any*/),
+                "selections": (v23/*: any*/),
                 "type": "PullRequest",
                 "abstractKey": null
               }
@@ -573,17 +521,17 @@ return {
             "storageKey": null
           }
         ],
-        "storageKey": "search(first:15,query:\"is:open is:pr review-requested:@me\",type:\"ISSUE\")"
+        "storageKey": "search(first:10,query:\"is:open is:pr review-requested:@me\",type:\"ISSUE\")"
       },
       {
         "alias": "assignedIssues",
-        "args": (v28/*: any*/),
+        "args": (v24/*: any*/),
         "concreteType": "SearchResultItemConnection",
         "kind": "LinkedField",
         "name": "search",
         "plural": false,
         "selections": [
-          (v23/*: any*/),
+          (v19/*: any*/),
           {
             "alias": null,
             "args": null,
@@ -594,7 +542,7 @@ return {
             "selections": [
               {
                 "kind": "InlineFragment",
-                "selections": (v27/*: any*/),
+                "selections": (v23/*: any*/),
                 "type": "Issue",
                 "abstractKey": null
               }
@@ -602,17 +550,17 @@ return {
             "storageKey": null
           }
         ],
-        "storageKey": "search(first:15,query:\"is:open is:issue assignee:@me\",type:\"ISSUE\")"
+        "storageKey": "search(first:10,query:\"is:open is:issue assignee:@me\",type:\"ISSUE\")"
       },
       {
         "alias": "myOpenPrs",
-        "args": (v29/*: any*/),
+        "args": (v25/*: any*/),
         "concreteType": "SearchResultItemConnection",
         "kind": "LinkedField",
         "name": "search",
         "plural": false,
         "selections": [
-          (v23/*: any*/),
+          (v19/*: any*/),
           {
             "alias": null,
             "args": null,
@@ -625,11 +573,11 @@ return {
                 "kind": "InlineFragment",
                 "selections": [
                   (v6/*: any*/),
-                  (v24/*: any*/),
-                  (v25/*: any*/),
+                  (v20/*: any*/),
+                  (v21/*: any*/),
                   (v12/*: any*/),
-                  (v30/*: any*/),
-                  (v26/*: any*/)
+                  (v26/*: any*/),
+                  (v22/*: any*/)
                 ],
                 "type": "PullRequest",
                 "abstractKey": null
@@ -638,7 +586,7 @@ return {
             "storageKey": null
           }
         ],
-        "storageKey": "search(first:15,query:\"is:open is:pr author:@me\",type:\"ISSUE\")"
+        "storageKey": "search(first:10,query:\"is:open is:pr author:@me\",type:\"ISSUE\")"
       }
     ],
     "type": "Query",
@@ -669,18 +617,18 @@ return {
             "kind": "LinkedField",
             "name": "repositoriesContributedTo",
             "plural": false,
-            "selections": (v33/*: any*/),
-            "storageKey": "repositoriesContributedTo(contributionTypes:[\"COMMIT\",\"PULL_REQUEST\",\"ISSUE\"],first:20,includeUserRepositories:true,orderBy:{\"direction\":\"DESC\",\"field\":\"PUSHED_AT\"})"
+            "selections": (v29/*: any*/),
+            "storageKey": "repositoriesContributedTo(contributionTypes:[\"COMMIT\",\"PULL_REQUEST\",\"ISSUE\"],first:12,includeUserRepositories:true,orderBy:{\"direction\":\"DESC\",\"field\":\"PUSHED_AT\"})"
           },
           {
             "alias": null,
-            "args": (v19/*: any*/),
+            "args": (v15/*: any*/),
             "concreteType": "RepositoryConnection",
             "kind": "LinkedField",
             "name": "repositories",
             "plural": false,
-            "selections": (v33/*: any*/),
-            "storageKey": "repositories(affiliations:[\"OWNER\",\"COLLABORATOR\",\"ORGANIZATION_MEMBER\"],first:25,orderBy:{\"direction\":\"DESC\",\"field\":\"PUSHED_AT\"},ownerAffiliations:[\"OWNER\",\"COLLABORATOR\",\"ORGANIZATION_MEMBER\"])"
+            "selections": (v29/*: any*/),
+            "storageKey": "repositories(affiliations:[\"OWNER\",\"COLLABORATOR\",\"ORGANIZATION_MEMBER\"],first:15,orderBy:{\"direction\":\"DESC\",\"field\":\"PUSHED_AT\"},ownerAffiliations:[\"OWNER\",\"COLLABORATOR\",\"ORGANIZATION_MEMBER\"])"
           },
           (v6/*: any*/)
         ],
@@ -688,13 +636,13 @@ return {
       },
       {
         "alias": "reviewRequests",
-        "args": (v22/*: any*/),
+        "args": (v18/*: any*/),
         "concreteType": "SearchResultItemConnection",
         "kind": "LinkedField",
         "name": "search",
         "plural": false,
         "selections": [
-          (v23/*: any*/),
+          (v19/*: any*/),
           {
             "alias": null,
             "args": null,
@@ -703,29 +651,29 @@ return {
             "name": "nodes",
             "plural": true,
             "selections": [
-              (v31/*: any*/),
+              (v27/*: any*/),
               {
                 "kind": "InlineFragment",
-                "selections": (v35/*: any*/),
+                "selections": (v31/*: any*/),
                 "type": "PullRequest",
                 "abstractKey": null
               },
-              (v36/*: any*/)
+              (v32/*: any*/)
             ],
             "storageKey": null
           }
         ],
-        "storageKey": "search(first:15,query:\"is:open is:pr review-requested:@me\",type:\"ISSUE\")"
+        "storageKey": "search(first:10,query:\"is:open is:pr review-requested:@me\",type:\"ISSUE\")"
       },
       {
         "alias": "assignedIssues",
-        "args": (v28/*: any*/),
+        "args": (v24/*: any*/),
         "concreteType": "SearchResultItemConnection",
         "kind": "LinkedField",
         "name": "search",
         "plural": false,
         "selections": [
-          (v23/*: any*/),
+          (v19/*: any*/),
           {
             "alias": null,
             "args": null,
@@ -734,29 +682,29 @@ return {
             "name": "nodes",
             "plural": true,
             "selections": [
-              (v31/*: any*/),
+              (v27/*: any*/),
               {
                 "kind": "InlineFragment",
-                "selections": (v35/*: any*/),
+                "selections": (v31/*: any*/),
                 "type": "Issue",
                 "abstractKey": null
               },
-              (v36/*: any*/)
+              (v32/*: any*/)
             ],
             "storageKey": null
           }
         ],
-        "storageKey": "search(first:15,query:\"is:open is:issue assignee:@me\",type:\"ISSUE\")"
+        "storageKey": "search(first:10,query:\"is:open is:issue assignee:@me\",type:\"ISSUE\")"
       },
       {
         "alias": "myOpenPrs",
-        "args": (v29/*: any*/),
+        "args": (v25/*: any*/),
         "concreteType": "SearchResultItemConnection",
         "kind": "LinkedField",
         "name": "search",
         "plural": false,
         "selections": [
-          (v23/*: any*/),
+          (v19/*: any*/),
           {
             "alias": null,
             "args": null,
@@ -765,40 +713,40 @@ return {
             "name": "nodes",
             "plural": true,
             "selections": [
-              (v31/*: any*/),
+              (v27/*: any*/),
               {
                 "kind": "InlineFragment",
                 "selections": [
                   (v6/*: any*/),
-                  (v24/*: any*/),
-                  (v25/*: any*/),
+                  (v20/*: any*/),
+                  (v21/*: any*/),
                   (v12/*: any*/),
-                  (v30/*: any*/),
-                  (v34/*: any*/)
+                  (v26/*: any*/),
+                  (v30/*: any*/)
                 ],
                 "type": "PullRequest",
                 "abstractKey": null
               },
-              (v36/*: any*/)
+              (v32/*: any*/)
             ],
             "storageKey": null
           }
         ],
-        "storageKey": "search(first:15,query:\"is:open is:pr author:@me\",type:\"ISSUE\")"
+        "storageKey": "search(first:10,query:\"is:open is:pr author:@me\",type:\"ISSUE\")"
       }
     ]
   },
   "params": {
-    "cacheID": "c42a7178f47ff9a144247e2242909ea0",
+    "cacheID": "d322a733f64d2cbf44356e037d81bdf5",
     "id": null,
     "metadata": {},
     "name": "HomePageQuery",
     "operationKind": "query",
-    "text": "query HomePageQuery {\n  rateLimit {\n    cost\n    remaining\n    limit\n    resetAt\n  }\n  viewer {\n    login\n    name\n    avatarUrl\n    repositoriesContributedTo(first: 20, contributionTypes: [COMMIT, PULL_REQUEST, ISSUE], orderBy: {field: PUSHED_AT, direction: DESC}, includeUserRepositories: true) {\n      nodes {\n        id\n        nameWithOwner\n        name\n        owner {\n          __typename\n          login\n          id\n        }\n        description\n        isPrivate\n        pushedAt\n        updatedAt\n        issues(states: OPEN) {\n          totalCount\n        }\n        pullRequests(states: OPEN) {\n          totalCount\n        }\n      }\n    }\n    repositories(first: 25, orderBy: {field: PUSHED_AT, direction: DESC}, affiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER], ownerAffiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER]) {\n      nodes {\n        id\n        nameWithOwner\n        name\n        owner {\n          __typename\n          login\n          id\n        }\n        description\n        isPrivate\n        pushedAt\n        updatedAt\n        issues(states: OPEN) {\n          totalCount\n        }\n        pullRequests(states: OPEN) {\n          totalCount\n        }\n      }\n    }\n    id\n  }\n  reviewRequests: search(query: \"is:open is:pr review-requested:@me\", type: ISSUE, first: 15) {\n    issueCount\n    nodes {\n      __typename\n      ... on PullRequest {\n        id\n        number\n        title\n        updatedAt\n        repository {\n          nameWithOwner\n          owner {\n            __typename\n            login\n            id\n          }\n          name\n          id\n        }\n      }\n      ... on Node {\n        __isNode: __typename\n        id\n      }\n    }\n  }\n  assignedIssues: search(query: \"is:open is:issue assignee:@me\", type: ISSUE, first: 15) {\n    issueCount\n    nodes {\n      __typename\n      ... on Issue {\n        id\n        number\n        title\n        updatedAt\n        repository {\n          nameWithOwner\n          owner {\n            __typename\n            login\n            id\n          }\n          name\n          id\n        }\n      }\n      ... on Node {\n        __isNode: __typename\n        id\n      }\n    }\n  }\n  myOpenPrs: search(query: \"is:open is:pr author:@me\", type: ISSUE, first: 15) {\n    issueCount\n    nodes {\n      __typename\n      ... on PullRequest {\n        id\n        number\n        title\n        updatedAt\n        isDraft\n        repository {\n          nameWithOwner\n          owner {\n            __typename\n            login\n            id\n          }\n          name\n          id\n        }\n      }\n      ... on Node {\n        __isNode: __typename\n        id\n      }\n    }\n  }\n}\n"
+    "text": "query HomePageQuery {\n  rateLimit {\n    cost\n    remaining\n    limit\n    resetAt\n  }\n  viewer {\n    login\n    name\n    avatarUrl\n    repositoriesContributedTo(first: 12, contributionTypes: [COMMIT, PULL_REQUEST, ISSUE], orderBy: {field: PUSHED_AT, direction: DESC}, includeUserRepositories: true) {\n      nodes {\n        id\n        nameWithOwner\n        name\n        owner {\n          __typename\n          login\n          id\n        }\n        description\n        isPrivate\n        pushedAt\n        updatedAt\n      }\n    }\n    repositories(first: 15, orderBy: {field: PUSHED_AT, direction: DESC}, affiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER], ownerAffiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER]) {\n      nodes {\n        id\n        nameWithOwner\n        name\n        owner {\n          __typename\n          login\n          id\n        }\n        description\n        isPrivate\n        pushedAt\n        updatedAt\n      }\n    }\n    id\n  }\n  reviewRequests: search(query: \"is:open is:pr review-requested:@me\", type: ISSUE, first: 10) {\n    issueCount\n    nodes {\n      __typename\n      ... on PullRequest {\n        id\n        number\n        title\n        updatedAt\n        repository {\n          nameWithOwner\n          owner {\n            __typename\n            login\n            id\n          }\n          name\n          id\n        }\n      }\n      ... on Node {\n        __isNode: __typename\n        id\n      }\n    }\n  }\n  assignedIssues: search(query: \"is:open is:issue assignee:@me\", type: ISSUE, first: 10) {\n    issueCount\n    nodes {\n      __typename\n      ... on Issue {\n        id\n        number\n        title\n        updatedAt\n        repository {\n          nameWithOwner\n          owner {\n            __typename\n            login\n            id\n          }\n          name\n          id\n        }\n      }\n      ... on Node {\n        __isNode: __typename\n        id\n      }\n    }\n  }\n  myOpenPrs: search(query: \"is:open is:pr author:@me\", type: ISSUE, first: 10) {\n    issueCount\n    nodes {\n      __typename\n      ... on PullRequest {\n        id\n        number\n        title\n        updatedAt\n        isDraft\n        repository {\n          nameWithOwner\n          owner {\n            __typename\n            login\n            id\n          }\n          name\n          id\n        }\n      }\n      ... on Node {\n        __isNode: __typename\n        id\n      }\n    }\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "ec63ecb7774addf2be7aee22d45aed6c";
+(node as any).hash = "b3f22d659a0f0e5b939afe985169ddce";
 
 export default node;
