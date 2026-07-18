@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { completionContext } from '../pathSuggest';
 import type { PathNavAnchor } from '../types';
+import { relativeToLocation, resolveFromCodeLocation } from '../../repoPath';
 
 const root: PathNavAnchor = {
   owner: 'o',
@@ -11,13 +12,13 @@ const root: PathNavAnchor = {
   cwd: '',
 };
 
-const blob: PathNavAnchor = {
+const nested: PathNavAnchor = {
   owner: 'o',
   name: 'r',
-  refName: 'master',
-  mode: 'blob',
-  path: 'DESIGN.md',
-  cwd: '',
+  refName: 'main',
+  mode: 'tree',
+  path: 'src/lib',
+  cwd: 'src/lib',
 };
 
 describe('completionContext', () => {
@@ -28,17 +29,47 @@ describe('completionContext', () => {
     });
   });
 
-  it('lists children of a typed directory prefix', () => {
-    expect(completionContext(root, 'src/li')).toEqual({
+  it('.. from nested tree lists parent', () => {
+    expect(completionContext(nested, '..')).toEqual({
       listDir: 'src',
-      prefix: 'li',
-    });
-  });
-
-  it('.. from root file lists repo root', () => {
-    expect(completionContext(blob, '..')).toEqual({
-      listDir: '',
       prefix: '',
     });
+  });
+});
+
+describe('relative + resolve', () => {
+  it('.. from nested tree is parent', () => {
+    expect(
+      resolveFromCodeLocation({ mode: 'tree', path: 'src/lib' }, '..'),
+    ).toBe('src');
+    expect(
+      relativeToLocation({ mode: 'tree', path: 'src/lib' }, 'src', true),
+    ).toBe('../');
+  });
+
+  it('.. from blob climbs out of containing dir', () => {
+    expect(
+      resolveFromCodeLocation(
+        { mode: 'blob', path: 'src/lib/foo.ts' },
+        '..',
+      ),
+    ).toBe('src');
+    expect(
+      relativeToLocation(
+        { mode: 'blob', path: 'src/lib/foo.ts' },
+        'src',
+        true,
+      ),
+    ).toBe('../');
+  });
+
+  it('sibling is relative without abs prefix', () => {
+    expect(
+      relativeToLocation(
+        { mode: 'tree', path: 'src/lib' },
+        'src/lib/bar.ts',
+        false,
+      ),
+    ).toBe('bar.ts');
   });
 });

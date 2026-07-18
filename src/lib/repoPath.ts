@@ -65,13 +65,19 @@ function pureUps(expression: string): number | null {
   return parts.length;
 }
 
+/** Directory the user is "in" (blob → file's folder; tree → path). */
+export function locationDir(loc: {
+  mode: 'blob' | 'tree';
+  path: string;
+}): string {
+  const cur = stripSlashes(loc.path);
+  return loc.mode === 'blob' ? dirnameRepo(cur) : cur;
+}
+
 /**
- * Resolve from a code location (blob or tree).
- *
- * - Pure `..` / `../..`: climb from the **current node** (file or folder).
- *   From DESIGN.md, `..` → `/`. From src/lib/foo.ts, `..` → `src/lib`.
- * - Mixed paths (`../x.ts`, `./y`, `src`): relative to the file’s directory
- *   (blob) or the tree path (tree) — shell cwd semantics.
+ * Resolve from a code location (blob or tree) — shell cwd semantics.
+ * Blob cwd = containing directory; pure `..` climbs from that cwd.
+ * From src/lib/foo.ts, `..` → `src`. From DESIGN.md, `..` → `/`.
  */
 export function resolveFromCodeLocation(
   loc: { mode: 'blob' | 'tree'; path: string },
@@ -80,22 +86,46 @@ export function resolveFromCodeLocation(
   const raw = expression.trim();
   if (!raw) return null;
 
-  const cur = stripSlashes(loc.path);
+  const cwd = locationDir(loc);
 
-  // Current directory (blob → containing folder)
-  if (raw === '.' || raw === './') {
-    return loc.mode === 'blob' ? dirnameRepo(cur) : cur;
-  }
+  if (raw === '.' || raw === './') return cwd;
 
   const ups = pureUps(raw);
   if (ups != null) {
-    let p = cur;
+    let p = cwd;
     for (let i = 0; i < ups; i++) p = dirnameRepo(p);
     return p;
   }
 
-  const base = loc.mode === 'blob' ? dirnameRepo(cur) : cur;
-  return resolveRepoPath(base, raw);
+  return resolveRepoPath(cwd, raw);
+}
+
+/**
+ * Express `toPath` relative to the location's cwd (for suggestions / Tab).
+ * Dirs get a trailing `/` except `.` → `./`.
+ */
+export function relativeToLocation(
+  loc: { mode: 'blob' | 'tree'; path: string },
+  toPath: string,
+  isDir: boolean,
+): string {
+  const from = locationDir(loc)
+    .split('/')
+    .filter(Boolean);
+  const to = stripSlashes(toPath).split('/').filter(Boolean);
+
+  let i = 0;
+  while (i < from.length && i < to.length && from[i] === to[i]) i++;
+
+  const ups = from.length - i;
+  const down = to.slice(i);
+  let rel = [...Array.from({ length: ups }, () => '..'), ...down].join('/');
+
+  if (!rel) {
+    return isDir ? './' : '.';
+  }
+  if (isDir && !rel.endsWith('/')) rel += '/';
+  return rel;
 }
 
 /**

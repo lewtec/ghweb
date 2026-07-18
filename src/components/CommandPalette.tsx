@@ -169,6 +169,7 @@ export function CommandPalette({ open, onOpenChange }: Props) {
       qRef.current,
       itemsRef.current,
       selectedRef.current,
+      ctx.pathNav,
     );
     if (next != null) {
       qRef.current = next;

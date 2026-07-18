@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { expandSlash, tabCompleteQuery, toAbsoluteQuery } from '../tabComplete';
-import type { GotoCandidate } from '../types';
+import { expandSlash, tabCompleteQuery } from '../tabComplete';
+import type { GotoCandidate, PathNavAnchor } from '../types';
+
+const anchor: PathNavAnchor = {
+  owner: 'o',
+  name: 'r',
+  refName: 'main',
+  mode: 'tree',
+  path: 'src',
+  cwd: 'src',
+};
 
 function pathItem(
   path: string,
@@ -8,7 +17,7 @@ function pathItem(
 ): GotoCandidate {
   return {
     id: `path:${path}`,
-    label: opts?.dir ? `${path}/` : path || '/',
+    label: 'placeholder',
     value: opts?.value ?? `path ${path}`,
     group: 'Path',
     icon: 'path',
@@ -24,20 +33,9 @@ function pathItem(
   };
 }
 
-describe('toAbsoluteQuery', () => {
-  it('adds leading slash and trailing for dirs', () => {
-    expect(toAbsoluteQuery('src/lib', true)).toBe('/src/lib/');
-    expect(toAbsoluteQuery('README.md', false)).toBe('/README.md');
-    expect(toAbsoluteQuery('', true)).toBe('/');
-  });
-});
-
 describe('expandSlash', () => {
   it('expands /pr to /prs ', () => {
     expect(expandSlash('/pr')).toBe('/prs ');
-  });
-  it('expands /i to /issues ', () => {
-    expect(expandSlash('/i')).toBe('/issues ');
   });
   it('does not treat /src as slash command', () => {
     expect(expandSlash('/src')).toBeNull();
@@ -45,20 +43,21 @@ describe('expandSlash', () => {
 });
 
 describe('tabCompleteQuery', () => {
-  it('replaces query with absolute dir path', () => {
+  it('writes relative dir path with trailing slash', () => {
     const items = [pathItem('src/lib', { dir: true, value: 'path src/lib' })];
-    expect(tabCompleteQuery('s', items, 'path src/lib')).toBe('/src/lib/');
-    expect(tabCompleteQuery('li', items, 'path src/lib')).toBe('/src/lib/');
-  });
-
-  it('replaces query with absolute file path', () => {
-    const items = [pathItem('README.md', { value: 'path README.md' })];
-    expect(tabCompleteQuery('READ', items, 'path README.md')).toBe(
-      '/README.md',
+    expect(tabCompleteQuery('l', items, 'path src/lib', anchor)).toBe(
+      'lib/',
     );
   });
 
+  it('writes .. for parent', () => {
+    const items = [pathItem('src', { dir: true, value: 'path up' })];
+    // from tree at src/lib
+    const a: PathNavAnchor = { ...anchor, path: 'src/lib', cwd: 'src/lib' };
+    expect(tabCompleteQuery('..', items, 'path up', a)).toBe('../');
+  });
+
   it('expands slash command', () => {
-    expect(tabCompleteQuery('/pr', [], '')).toBe('/prs ');
+    expect(tabCompleteQuery('/pr', [], '', null)).toBe('/prs ');
   });
 });

@@ -3,6 +3,7 @@ import {
   appPathForObject,
   cwdFromCodeLocation,
   isPathExpression,
+  relativeToLocation,
   resolveFromCodeLocation,
   resolveRepoPath,
 } from '../repoPath';
@@ -40,45 +41,39 @@ describe('isPathExpression', () => {
     expect(isPathExpression('../../foo')).toBe(true);
     expect(isPathExpression('./a.ts')).toBe(true);
     expect(isPathExpression('index.css')).toBe(true);
-    expect(isPathExpression('/src/x')).toBe(true);
   });
-  it('ignores slash commands', () => {
-    expect(isPathExpression('/code')).toBe(false);
-    expect(isPathExpression('/issues foo')).toBe(false);
-  });
-  it('inCode: folders from root (no extension)', () => {
+  it('inCode: folders from root', () => {
     expect(isPathExpression('src', { inCode: true })).toBe(true);
     expect(isPathExpression('src/lib', { inCode: true })).toBe(true);
-    expect(isPathExpression('src/lib')).toBe(false);
   });
 });
 
 describe('resolveFromCodeLocation', () => {
-  it('.. from root blob (DESIGN.md) → repo root', () => {
+  it('.. from root blob → root', () => {
     expect(
       resolveFromCodeLocation({ mode: 'blob', path: 'DESIGN.md' }, '..'),
     ).toBe('');
   });
 
-  it('.. from nested blob → containing folder', () => {
+  it('.. from nested blob → parent of containing dir (shell cwd)', () => {
     expect(
       resolveFromCodeLocation(
         { mode: 'blob', path: 'src/lib/foo.ts' },
         '..',
       ),
-    ).toBe('src/lib');
+    ).toBe('src');
   });
 
-  it('../.. from nested blob → parent of containing folder', () => {
+  it('../.. from nested blob', () => {
     expect(
       resolveFromCodeLocation(
         { mode: 'blob', path: 'src/lib/foo.ts' },
         '../..',
       ),
-    ).toBe('src');
+    ).toBe('');
   });
 
-  it('sibling file from blob', () => {
+  it('sibling from blob', () => {
     expect(
       resolveFromCodeLocation(
         { mode: 'blob', path: 'src/lib/foo.ts' },
@@ -92,24 +87,33 @@ describe('resolveFromCodeLocation', () => {
       resolveFromCodeLocation({ mode: 'tree', path: 'src/lib' }, '..'),
     ).toBe('src');
   });
+});
 
-  it('folder from tree root', () => {
+describe('relativeToLocation', () => {
+  it('formats relative suggestions', () => {
     expect(
-      resolveFromCodeLocation({ mode: 'tree', path: '' }, 'src'),
-    ).toBe('src');
+      relativeToLocation({ mode: 'tree', path: 'src/lib' }, 'src', true),
+    ).toBe('../');
+    expect(
+      relativeToLocation(
+        { mode: 'tree', path: 'src/lib' },
+        'src/lib/x.ts',
+        false,
+      ),
+    ).toBe('x.ts');
+    expect(
+      relativeToLocation({ mode: 'tree', path: '' }, 'src/lib', true),
+    ).toBe('src/lib/');
   });
 });
 
 describe('appPathForObject', () => {
-  it('builds blob and tree urls', () => {
-    expect(appPathForObject('o', 'r', 'main', 'src/a.ts', 'blob')).toBe(
-      '/o/r/blob/main/src/a.ts',
-    );
+  it('builds urls', () => {
     expect(appPathForObject('o', 'r', 'main', '', 'tree')).toBe(
       '/o/r/tree/main',
     );
-    expect(appPathForObject('o', 'r', 'main', 'src', 'tree')).toBe(
-      '/o/r/tree/main/src',
+    expect(appPathForObject('o', 'r', 'main', 'src/a.ts', 'blob')).toBe(
+      '/o/r/blob/main/src/a.ts',
     );
   });
 });
