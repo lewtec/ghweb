@@ -36,15 +36,20 @@ html[data-theme='light'] {
 }
 
 /*
- * @git-diff-view sets `.diff-line-widget-wrapper * { color: initial }` which
- * forces canvastext (often black) and fights daisyUI when OS is light but the
- * app is dark (or the reverse). Re-bind widgets + form controls to theme tokens.
+ * @git-diff-view sets `.diff-line-widget-wrapper *` and
+ * `.diff-line-extend-wrapper * { color: initial }` → canvastext (often black),
+ * unreadable when app theme ≠ OS scheme.
+ * Review *threads* use extend-wrapper; the compose form uses widget-wrapper.
+ * Override initial → theme tokens; re-assert prettylights so code blocks match
+ * conversation markdown (html[data-theme], not prefers-color-scheme alone).
  */
-.diff-line-widget-wrapper {
+.diff-line-widget-wrapper,
+.diff-line-extend-wrapper {
   color: var(--color-base-content);
   color-scheme: inherit;
 }
-.diff-line-widget-wrapper * {
+.diff-line-widget-wrapper *,
+.diff-line-extend-wrapper * {
   color: inherit;
 }
 .diff-line-widget-wrapper .textarea,
@@ -62,6 +67,133 @@ html[data-theme='light'] {
 .diff-line-widget-wrapper .input::placeholder,
 .diff-line-widget-wrapper input::placeholder {
   color: color-mix(in oklab, var(--color-base-content) 45%, transparent);
+}
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body {
+  color: var(--color-base-content);
+  background: transparent;
+}
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body pre,
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body code,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body pre,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body code {
+  background-color: var(--color-base-200);
+  color: var(--color-base-content);
+}
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body pre code,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body pre code {
+  background-color: transparent;
+}
+/* Prettylights: beat `* { color: inherit }` (and package `color: initial`) */
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-c,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-c {
+  color: var(--color-prettylights-syntax-comment);
+}
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-c1,
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-s .pl-v,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-c1,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-s .pl-v {
+  color: var(--color-prettylights-syntax-constant);
+}
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-e,
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-en,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-e,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-en {
+  color: var(--color-prettylights-syntax-entity);
+}
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-smi,
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-s .pl-s1,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-smi,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-s .pl-s1 {
+  color: var(--color-prettylights-syntax-storage-modifier-import);
+}
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-ent,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-ent {
+  color: var(--color-prettylights-syntax-entity-tag);
+}
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-k,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-k {
+  color: var(--color-prettylights-syntax-keyword);
+}
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-s,
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-pds,
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-s .pl-pse .pl-s1,
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-sr,
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-sr .pl-cce,
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-sr .pl-sre,
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-sr .pl-sra,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-s,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-pds,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-s .pl-pse .pl-s1,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-sr,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-sr .pl-cce,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-sr .pl-sre,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-sr .pl-sra {
+  color: var(--color-prettylights-syntax-string);
+}
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-v,
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-smw,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-v,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-smw {
+  color: var(--color-prettylights-syntax-variable);
+}
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-bu,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-bu {
+  color: var(--color-prettylights-syntax-brackethighlighter-unmatched);
+}
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-ii,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-ii {
+  color: var(--color-prettylights-syntax-invalid-illegal-text);
+  background-color: var(--color-prettylights-syntax-invalid-illegal-bg, transparent);
+}
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-c2,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-c2 {
+  color: var(--color-prettylights-syntax-carriage-return-text);
+  background-color: var(--color-prettylights-syntax-carriage-return-bg);
+}
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-sr .pl-cce,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-sr .pl-cce {
+  color: var(--color-prettylights-syntax-string-regexp);
+}
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-ml,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-ml {
+  color: var(--color-prettylights-syntax-markup-list);
+}
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-mh,
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-mh .pl-en,
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-ms,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-mh,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-mh .pl-en,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-ms {
+  color: var(--color-prettylights-syntax-markup-heading);
+}
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-mi,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-mi {
+  color: var(--color-prettylights-syntax-markup-italic);
+}
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-mb,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-mb {
+  color: var(--color-prettylights-syntax-markup-bold);
+}
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-md,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-md {
+  color: var(--color-prettylights-syntax-markup-deleted-text);
+  background-color: var(--color-prettylights-syntax-markup-deleted-bg);
+}
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-mi1,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-mi1 {
+  color: var(--color-prettylights-syntax-markup-inserted-text);
+  background-color: var(--color-prettylights-syntax-markup-inserted-bg);
+}
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-mc,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-mc {
+  color: var(--color-prettylights-syntax-markup-changed-text);
+  background-color: var(--color-prettylights-syntax-markup-changed-bg);
+}
+.diff-line-widget-wrapper .ghweb-markdown.markdown-body .pl-mi2,
+.diff-line-extend-wrapper .ghweb-markdown.markdown-body .pl-mi2 {
+  color: var(--color-prettylights-syntax-markup-ignored-text);
+  background-color: var(--color-prettylights-syntax-markup-ignored-bg);
 }
 
 /* App form controls: same tokens so OS scheme cannot wash out contrast */
