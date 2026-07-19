@@ -57,10 +57,11 @@ Auth model assumes a user who can create a PAT (same mental model as `gh auth to
 | **Home `/`** | Hybrid **tool home**: triage strip (review requests, assigned issues, your open PRs/issues — exact widgets as API allows) + repo list (affiliations, starred/pins as data allows) |
 | **Repo** | Repo home, navigation into code / issues / PRs |
 | **Code** | **Read-only** tree + file view + README/markdown; honest handling of large/binary/LFS (message or open on GitHub) |
+| **Commits** | History + single commit + compare — see §5.5 |
 | **Issues** | **Power triage** — view + broad writes (see §5.3) |
 | **Pull requests** | **Power triage** — conversation, files (read), reviews, merge when allowed |
 | **Search** | **GraphQL `search` only** — repos, issues, PRs, users/orgs (types the schema supports well). No v1 code search |
-| **Chrome** | Avatar (viewer + **account switcher**), **breadcrumb** `ghweb > owner/repo` + code/issues/PRs/**Actions** icons (no sidebar), command palette (`/code` `/issues` `/prs` `/actions` `/switch`) |
+| **Chrome** | Avatar (viewer + **account switcher**), **breadcrumb** `ghweb > owner/repo` + code/issues/PRs/**Actions** icons (no sidebar; **no** Commits section icon), command palette (`/code` `/issues` `/prs` `/actions` `/commits` `/switch`) |
 | **Actions** | **GraphQL-first console** — see §5.4 |
 
 ### 5.2 Later (roadmap, not v1 gates)
