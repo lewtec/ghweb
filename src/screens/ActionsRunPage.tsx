@@ -7,7 +7,7 @@ import {
 } from 'react-relay';
 import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
 import { Link } from '@tanstack/react-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ActionsRunPageQuery } from './__generated__/ActionsRunPageQuery.graphql';
 import type { ActionsRunPageApproveMutation } from './__generated__/ActionsRunPageApproveMutation.graphql';
 import type { ActionsRunPageRejectMutation } from './__generated__/ActionsRunPageRejectMutation.graphql';
@@ -563,6 +563,10 @@ function JobLogPanel({
   const [pendingMsg, setPendingMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  /** Monotonic id so late REST log responses for a prior job/retry are ignored. */
+  const fetchSeq = useRef(0);
+  const jobInProgressRef = useRef(jobInProgress);
+  jobInProgressRef.current = jobInProgress;
 
   const jobUiUrl =
     githubActionsJobUrl(owner, name, runDatabaseId, jobDatabaseId) ??
@@ -572,39 +576,54 @@ function JobLogPanel({
       ? githubActionsJobLogsApiUrl(owner, name, jobDatabaseId)
       : null;
 
-  const load = useCallback(async () => {
-    if (jobDatabaseId == null) {
-      setErr(null);
-      setLogs(null);
-      setPendingMsg(null);
-      return;
-    }
-    setLoading(true);
-    setErr(null);
-    try {
-      const result = await fetchActionsJobLogs(owner, name, jobDatabaseId);
-      if (result.kind === 'ok') {
-        setLogs(result.text);
+  const load = useCallback(
+    async (opts?: { clear?: boolean }) => {
+      if (jobDatabaseId == null) {
+        setErr(null);
+        setLogs(null);
         setPendingMsg(null);
-        setErr(null);
-      } else if (result.kind === 'pending') {
-        setPendingMsg(result.message);
-        setErr(null);
-        if (!jobInProgress) {
+        setLoading(false);
+        return;
+      }
+      const seq = ++fetchSeq.current;
+      setLoading(true);
+      setErr(null);
+      // Drop prior job text when switching jobs (avoid flashing the wrong logs).
+      if (opts?.clear) {
+        setLogs(null);
+        setPendingMsg(null);
+      }
+      try {
+        const result = await fetchActionsJobLogs(owner, name, jobDatabaseId);
+        if (seq !== fetchSeq.current) return;
+        if (result.kind === 'ok') {
+          setLogs(result.text);
+          setPendingMsg(null);
+          setErr(null);
+        } else if (result.kind === 'pending') {
+          setPendingMsg(result.message);
+          setErr(null);
+          if (!jobInProgressRef.current) {
+            setLogs(null);
+          }
+        } else {
+          setErr(result.message);
+          setPendingMsg(null);
           setLogs(null);
         }
-      } else {
-        setErr(result.message);
-        setPendingMsg(null);
-        setLogs(null);
+      } finally {
+        if (seq === fetchSeq.current) setLoading(false);
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [owner, name, jobDatabaseId, jobInProgress]);
+    },
+    [owner, name, jobDatabaseId],
+  );
 
   useEffect(() => {
-    void load();
+    void load({ clear: true });
+    return () => {
+      // Invalidate in-flight work when job changes or the panel unmounts.
+      fetchSeq.current += 1;
+    };
   }, [load]);
 
   useEffect(() => {
