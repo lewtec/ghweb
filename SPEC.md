@@ -28,10 +28,9 @@ It is a **tool to get things done**, not a marketing clone of GitHub. North star
 - Admin, billing, org policy, security-product chrome when the public API is weak or missing
 - Write/edit/commit from the code browser
 - Code search (REST), Actions, Discussions (later slices)
-- Multi-account switcher UI
-- GitHub Enterprise / custom host UI (client must still accept a future `baseUrl`)
 - GraphQL subscriptions (GitHub does not offer them)
-- Safer-than-GitHub credential storage (client-held PAT is accepted for dogfood)
+- Safer-than-GitHub credential storage (client-held PATs in browser storage are accepted for dogfood; multi-account expands XSS blast radius — accepted, not marketed as safer than GitHub)
+- Backend token vault / encrypt-at-rest theater
 - **Guest / anonymous / unauthenticated browsing** — GitHub GraphQL requires auth; REST-only guest is not a product path. PAT (or later device-flow OAuth) is mandatory to use the app.
 
 ---
@@ -61,7 +60,7 @@ Auth model assumes a user who can create a PAT (same mental model as `gh auth to
 | **Issues** | **Power triage** — view + broad writes (see §5.3) |
 | **Pull requests** | **Power triage** — conversation, files (read), reviews, merge when allowed |
 | **Search** | **GraphQL `search` only** — repos, issues, PRs, users/orgs (types the schema supports well). No v1 code search |
-| **Chrome** | Avatar (viewer), **breadcrumb** `ghweb > owner/repo` + code/issues/PRs/**Actions** icons (no sidebar), command palette (`/code` `/issues` `/prs` `/actions`) |
+| **Chrome** | Avatar (viewer + **account switcher**), **breadcrumb** `ghweb > owner/repo` + code/issues/PRs/**Actions** icons (no sidebar), command palette (`/code` `/issues` `/prs` `/actions` `/switch`) |
 | **Actions** | **GraphQL-first console** — see §5.4 |
 
 ### 5.2 Later (roadmap, not v1 gates)
@@ -70,10 +69,9 @@ Auth model assumes a user who can create a PAT (same mental model as `gh auth to
 - Discussions
 - Notifications inbox polish
 - Code search (REST)
-- Multi-account profiles
-- Configurable GitHub host (GHE)
 - Device-flow login (optional comfort upgrade over PAT paste)
 - Light web edit/commit (only after read-only code + triage are solid)
+- Soft “sign out this tab only” (park roster without removing account)
 
 ### 5.4 Actions (GraphQL-first console)
 
@@ -202,7 +200,7 @@ Use the shared `ExternalLink` component (or equivalent) so this is not forgotten
 - Default: **system** (`prefers-color-scheme`)  
 - User toggle in avatar menu  
 - Theme preference may use **`localStorage`**  
-- PAT must **not** use `localStorage` (see auth)  
+- Account **roster** (tokens) uses **`localStorage`**; **active account id** uses **`sessionStorage`** (see §9)  
 
 ---
 
@@ -365,19 +363,34 @@ v1 should not need REST for the core loop. When later features need it (Actions,
 
 ## 9. Auth & session
 
+Multi-account is **`gh auth switch`–shaped**: durable roster of identities, one **active** per tab.
+
 | Decision | Choice |
 |----------|--------|
 | Primary | **PAT paste** (classic or fine-grained; user-managed scopes) |
+| Host | **API `baseUrl` per account** (default `https://api.github.com/graphql`); GHE is the same field, not a special mode |
 | Optional later | OAuth **device flow** if low-friction and scopes suffice |
-| Guest / anonymous | **Out of scope forever under GraphQL-first** — app hard-gates on a token; no public-read-without-auth |
-| Accounts | Single account model (no switcher in v1) |
-| Tab model | **Independent per browser tab** — no cross-tab Relay sync |
-| Token storage | **`sessionStorage`** only (survives refresh in-tab; dies with tab) |
-| Sign-out | Clear token + **wipe Relay store** |
+| Guest / anonymous | **Out of scope forever under GraphQL-first** — app hard-gates on a token |
+| Accounts | **Multi-account roster** + switcher (avatar menu + ⌘K `/switch`) |
+| Tab model | **Independent per browser tab** — no cross-tab Relay sync; each tab has its own active account |
+| Roster storage | **`localStorage`** (`ghweb.accounts`) — survives browser restart |
+| Active storage | **`sessionStorage`** (`ghweb.activeMeKey`) — per tab only |
+| Account record | `meKey`, `token`, `baseUrl`, viewer snapshot (`login`, `avatarUrl`, `name`, `viewerId`), `unhealthy?`, timestamps |
+| Identity key (`meKey`) | Profile-shaped **`{webHost}/{login}`** (e.g. `github.com/lucasew`), derived from API host + `viewer.login` (`api.github.com` → `github.com`) |
+| Add account | API base (defaulted) + PAT → `viewer` query → **upsert** by `meKey` (same key replaces token) → set active → **full page refresh** as that user |
+| Switch | Probe `viewer` with that account’s token/baseUrl; on success set session active + **full refresh same URL**; on failure mark **needs re-auth**, do not activate |
+| Sign out | **Remove active account from roster** + clear session active + refresh → login gate (not “park for later”) |
+| Remove other | Per-account remove from roster; optional forget-all |
+| Migrate | One-shot: legacy `sessionStorage` `ghweb.pat` (and `gitweb.pat`) → roster entry + active, then drop legacy keys (same promote trick as key rename, one level up) |
+| UI | Avatar menu: list, switch, add, remove/sign out; ⌘K **`/switch`** autocompletes accounts by me-key/login/host |
+| Relay / cache | Switch and sign-out imply **full remount/refresh** (empty Relay store; no soft token swap under live queries) |
+| REST | Derive REST API root from account GraphQL `baseUrl` (github.com → `https://api.github.com`; GHE `…/api/graphql` → `…/api/v3`) |
 
-Scopes: document recommended PAT scopes for v1 (repo, read:org, etc.) in app onboarding UI; fail with transparent errors if a mutation lacks scope.
+Scopes: document recommended PAT scopes in onboarding UI; fail with transparent errors if a mutation lacks scope.
 
-Security note: XSS can steal a tab’s token. Accepted for v1 dogfood; not marketed as safer than GitHub’s own session.
+**Security:** XSS can read **all roster tokens** in `localStorage` (larger blast radius than session-only). Accepted for dogfood; disclose on Add (“tokens stay in this browser until you remove the account”). Not marketed as safer than GitHub’s session. No encrypt-at-rest theater.
+
+**CORS:** browser → custom GHE only works if the host allows browser CORS; Add may fail with an honest error — no v1 proxy.
 
 ---
 
@@ -497,9 +510,11 @@ Decisions locked in the 2026-07 grill session:
 1. Full alternative north star; v1 = code + social core  
 2. React + Vite + Tailwind + daisyUI; Vercel SPA  
 3. GraphQL-first + Relay + broad optimistics  
-4. PAT paste; sessionStorage; per-tab isolation; single account  
+4. PAT paste; **multi-account** (`gh auth switch`–like); roster `localStorage` + active `sessionStorage`; per-tab active; full refresh on switch  
 4b. **No guest mode** — GraphQL requires auth; unauthenticated / REST-guest browse discarded  
-5. Direct browser → GitHub API  
+4c. **Sign out removes** active account from roster (not tab-only soft logout)  
+4d. **API baseUrl per account** (GHE = same field); me-key `webHost/login`; probe on switch; unhealthy badge on dead token  
+5. Direct browser → GitHub API (per-account baseUrl)  
 6. Path parity + cleaner search/filter URLs  
 7. Hybrid tool home  
 8. Power triage writes; read-only code  
@@ -508,7 +523,8 @@ Decisions locked in the 2026-07 grill session:
 11. Freshness: focus + slow PR/issue poll  
 12. Full error transparency via standard controls  
 13. System theme + toggle  
-14. github.com now; baseUrl later  
+14. Multi-host via API baseUrl on each account (default api.github.com); CORS honesty for GHE  
+24. Account switcher: avatar menu + `/switch` autocomplete; Add activates + full refresh; migrate legacy session PAT upward  
 15. Dual license AGPL + commercial; CLA with relicense grant  
 16. mise: `codegen:schema`, `codegen:relay`, `codegen`→`codegen:*`; `format`/`lint` → **workspaced codebase format/lint**; `ci`; weekly schema PR; **no husky**  
 17. Diff UI: `@git-diff-view/react` (confirmed); library vs own split per §8.2
