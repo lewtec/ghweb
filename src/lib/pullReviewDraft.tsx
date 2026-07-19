@@ -20,21 +20,9 @@ const PullReviewDraftContext = createContext<PullReviewDraftValue | null>(null);
  * PR-scoped draft review text. Lives above conversation/files routes so the
  * More menu summary and conversation "Optional review body" stay in sync.
  */
-export function PullReviewDraftProvider({
-  prKey,
-  children,
-}: {
-  /** owner/name#number — reset draft when PR changes */
-  prKey: string;
-  children: ReactNode;
-}) {
+export function PullReviewDraftProvider({ children }: { children: ReactNode }) {
+  // Reset when PR changes by putting key={prKey} on this provider from the route.
   const [reviewBody, setReviewBodyState] = useState('');
-  // Remount state when prKey changes via key on provider from parent, or:
-  const [keyed, setKeyed] = useState(prKey);
-  if (keyed !== prKey) {
-    setKeyed(prKey);
-    setReviewBodyState('');
-  }
 
   const setReviewBody = useCallback((next: string) => {
     setReviewBodyState(next);

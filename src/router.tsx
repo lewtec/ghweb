@@ -10,6 +10,7 @@ import { TopBar } from '@/components/TopBar';
 import { CommandPalette } from '@/components/CommandPalette';
 import { LoadingBlock } from '@/components/LoadingBlock';
 import { PagePending } from '@/components/PagePending';
+import { PullReviewDraftProvider } from '@/lib/pullReviewDraft';
 import { graphql, useLazyLoadQuery } from 'react-relay';
 import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
 import type { routerViewerQuery } from './__generated__/routerViewerQuery.graphql';
@@ -332,12 +333,27 @@ const pullsRoute = createRoute({
   },
 });
 
-const pullDetailRoute = createRoute({
+/** Layout keeps review draft body across conversation ↔ files. */
+const pullLayoutRoute = createRoute({
   getParentRoute: () => repoLayoutRoute,
   path: '/pull/$number',
+  component: function PullLayout() {
+    const { owner, name } = repoLayoutRoute.useParams();
+    const { number } = pullLayoutRoute.useParams();
+    return (
+      <PullReviewDraftProvider key={`${owner}/${name}#${number}`}>
+        <Outlet />
+      </PullReviewDraftProvider>
+    );
+  },
+});
+
+const pullDetailRoute = createRoute({
+  getParentRoute: () => pullLayoutRoute,
+  path: '/',
   component: function PullDetailRoute() {
     const { owner, name } = repoLayoutRoute.useParams();
-    const { number } = pullDetailRoute.useParams();
+    const { number } = pullLayoutRoute.useParams();
     return (
       <Suspend>
         <PullDetailPage
@@ -352,11 +368,11 @@ const pullDetailRoute = createRoute({
 });
 
 const pullFilesRoute = createRoute({
-  getParentRoute: () => repoLayoutRoute,
-  path: '/pull/$number/files',
+  getParentRoute: () => pullLayoutRoute,
+  path: '/files',
   component: function PullFilesRoute() {
     const { owner, name } = repoLayoutRoute.useParams();
-    const { number } = pullFilesRoute.useParams();
+    const { number } = pullLayoutRoute.useParams();
     return (
       <Suspend>
         <PullDetailPage
@@ -469,8 +485,7 @@ const routeTree = rootRoute.addChildren([
     issuesRoute,
     issueDetailRoute,
     pullsRoute,
-    pullDetailRoute,
-    pullFilesRoute,
+    pullLayoutRoute.addChildren([pullDetailRoute, pullFilesRoute]),
     actionsRoute,
     actionsRunRoute,
   ]),

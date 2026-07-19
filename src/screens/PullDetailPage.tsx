@@ -56,6 +56,7 @@ import {
   type ReviewerUser,
 } from '@/components/RequestReviewersModal';
 import { CopyableNumber } from '@/components/CopyableNumber';
+import { usePullReviewDraft } from '@/lib/pullReviewDraft';
 import { cn } from '@/lib/cls';
 
 const PullFilesDiff = lazy(() =>
@@ -421,7 +422,7 @@ export function PullDetailPage({
 
   const repo = data.repository;
   const pr = repo?.pullRequest;
-  const [reviewBody, setReviewBody] = useState('');
+  const { reviewBody, setReviewBody, clearReviewBody } = usePullReviewDraft();
   const [merging, setMerging] = useState(false);
   const [reviewersOpen, setReviewersOpen] = useState(false);
   /** Single daisyUI popover for draft / review / merge / close */
@@ -573,7 +574,7 @@ export function PullDetailPage({
           toast.error('Submit review failed', 'GitHub returned no review');
           return;
         }
-        setReviewBody('');
+        clearReviewBody();
         toast.info(`Review submitted: ${label}`);
         refresh();
       },
@@ -612,7 +613,7 @@ export function PullDetailPage({
           );
           return;
         }
-        setReviewBody('');
+        clearReviewBody();
         toast.info(
           review.state === 'PENDING'
             ? 'Review started (pending)'
