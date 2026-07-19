@@ -34,7 +34,8 @@ export type GotoIcon =
   | 'path'
   | 'home'
   | 'search'
-  | 'repo';
+  | 'repo'
+  | 'account';
 
 /** What happens when a candidate is selected. */
 export type GotoAction =
@@ -48,7 +49,8 @@ export type GotoAction =
       path: string;
       /** Skip probe when known from directory listing */
       knownKind?: 'blob' | 'tree';
-    };
+    }
+  | { kind: 'switch-account'; meKey: string };
 
 export type GotoCandidate = {
   id: string;

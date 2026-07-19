@@ -6,7 +6,11 @@ import {
   type FetchFunction,
   type GraphQLResponse,
 } from 'relay-runtime';
-import { clearToken, getToken } from '@/lib/auth';
+import {
+  getGraphqlUrl,
+  getToken,
+  markActiveUnhealthyAndClearSession,
+} from '@/lib/auth';
 
 export const DEFAULT_GRAPHQL_URL = 'https://api.github.com/graphql';
 
@@ -63,8 +67,8 @@ export type GitHubClientOptions = {
 };
 
 function createFetch(opts: GitHubClientOptions = {}): FetchFunction {
-  const baseUrl = opts.baseUrl ?? DEFAULT_GRAPHQL_URL;
   const getAccessToken = opts.getAccessToken ?? getToken;
+  const getUrl = () => opts.baseUrl ?? getGraphqlUrl() ?? DEFAULT_GRAPHQL_URL;
 
   return (params, variables): Promise<GraphQLResponse> => {
     const token = getAccessToken();
@@ -74,7 +78,7 @@ function createFetch(opts: GitHubClientOptions = {}): FetchFunction {
       );
     }
 
-    return fetch(baseUrl, {
+    return fetch(getUrl(), {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -90,9 +94,9 @@ function createFetch(opts: GitHubClientOptions = {}): FetchFunction {
       parseRateHeaders(res.headers);
 
       if (res.status === 401) {
-        clearToken();
+        markActiveUnhealthyAndClearSession();
         throw new Error(
-          'GitHub returned 401 Unauthorized. Token invalid or revoked — paste a new PAT.',
+          'GitHub returned 401 Unauthorized. Token invalid or revoked — switch account or paste a new PAT.',
         );
       }
 
@@ -123,8 +127,6 @@ function createFetch(opts: GitHubClientOptions = {}): FetchFunction {
         const isMutation = params.operationKind === 'mutation';
         const dataObj =
           json.data && typeof json.data === 'object' ? json.data : null;
-        // GitHub often returns { data: { addPullRequestReview: null }, errors: [...] }
-        // — that must fail so Relay calls onError (not a fake onCompleted success).
         const mutationPayloadMissing =
           isMutation &&
           dataObj != null &&

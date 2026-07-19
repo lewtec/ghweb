@@ -1,3 +1,4 @@
+import { hardRefresh, switchAccount } from '@/lib/auth';
 import { appPathForObject } from '@/lib/repoPath';
 import { probeRepoPath } from '@/lib/rest';
 import type { GotoAction } from './types';
@@ -18,6 +19,19 @@ export async function executeGoto(
 ): Promise<GotoExecuteResult> {
   if (action.kind === 'navigate') {
     await deps.navigate(action.to);
+    return 'navigated';
+  }
+
+  if (action.kind === 'switch-account') {
+    const result = await switchAccount(action.meKey);
+    if (!result.ok) {
+      deps.toastError(
+        result.unhealthy ? 'Account needs re-auth' : 'Could not switch',
+        result.error,
+      );
+      return 'error';
+    }
+    hardRefresh();
     return 'navigated';
   }
 

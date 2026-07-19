@@ -1,3 +1,4 @@
+import { getActiveMeKey, listAccounts } from '@/lib/auth';
 import { githubUrlToAppPath } from '@/lib/githubUrl';
 import { fuzzyMatch, type RecentRepo } from '@/lib/recentRepos';
 import { isPathExpression } from '@/lib/repoPath';
@@ -6,6 +7,7 @@ import type { GotoCandidate, GotoProvider } from './types';
 
 const GROUP = {
   path: 'Path',
+  accounts: 'Accounts',
   here: 'This repository',
   jump: 'Jump',
   repos: 'Repositories',
@@ -92,10 +94,41 @@ export const hereSectionProvider: GotoProvider = (q, ctx) => {
   return all.filter((c) => fuzzyMatch(c.value, q));
 };
 
+/** /switch [filter] — multi-account */
+export const switchAccountProvider: GotoProvider = (q) => {
+  const slash = parseSlashCommand(q);
+  if (slash?.cmd !== 'switch') return [];
+  const filter = slash.rest;
+  const active = getActiveMeKey();
+  const accounts = listAccounts().filter((a) => a.meKey !== '_migrating');
+  return accounts
+    .filter((a) => {
+      if (!filter) return true;
+      const hay = `${a.meKey} ${a.login} ${a.name ?? ''} ${a.baseUrl}`;
+      return fuzzyMatch(hay, filter);
+    })
+    .map((a, i) => ({
+      id: `switch-${a.meKey}`,
+      label:
+        a.meKey === active
+          ? `${a.meKey} (active)`
+          : a.unhealthy
+            ? `${a.meKey} (re-auth)`
+            : a.meKey,
+      hint: a.baseUrl.replace(/^https?:\/\//, ''),
+      value: `switch ${a.meKey} ${a.login}`,
+      group: GROUP.accounts,
+      icon: 'account' as const,
+      priority: 5 + i,
+      action: { kind: 'switch-account' as const, meKey: a.meKey },
+    }));
+};
+
 /** /code nixpkgs — section + fuzzy repo. */
 export const jumpSectionProvider: GotoProvider = (q, ctx) => {
   const slash = parseSlashCommand(q);
-  if (!slash || slash.cmd === 'search' || !slash.rest) return [];
+  if (!slash || slash.cmd === 'search' || slash.cmd === 'switch' || !slash.rest)
+    return [];
   const repos = filterRepos(ctx.recent, ctx.repo, slash.rest);
   return repos.flatMap((r) => {
     const base = sectionCandidates(r.owner, r.name, GROUP.jump, 30);
@@ -243,6 +276,7 @@ function filterRepos(
  * merged in CommandPalette.
  */
 export const defaultProviders: GotoProvider[] = [
+  switchAccountProvider,
   hereSectionProvider,
   jumpSectionProvider,
   reposProvider,

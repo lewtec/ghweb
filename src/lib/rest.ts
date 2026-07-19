@@ -1,6 +1,8 @@
-import { getToken } from '@/lib/auth';
+import { getRestBase, getToken } from '@/lib/auth';
 
-const API = 'https://api.github.com';
+function apiRoot(): string {
+  return getRestBase();
+}
 
 export type RestPullFile = {
   filename: string;
@@ -24,7 +26,7 @@ export async function fetchPullFiles(
   let page = 1;
   for (;;) {
     const res = await fetch(
-      `${API}/repos/${owner}/${repo}/pulls/${number}/files?per_page=100&page=${page}`,
+      `${apiRoot()}/repos/${owner}/${repo}/pulls/${number}/files?per_page=100&page=${page}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -71,13 +73,13 @@ function contentsUrl(
   path: string,
 ): string {
   if (!path) {
-    return `${API}/repos/${owner}/${repo}/contents?ref=${encodeURIComponent(ref)}`;
+    return `${apiRoot()}/repos/${owner}/${repo}/contents?ref=${encodeURIComponent(ref)}`;
   }
   const encPath = path
     .split('/')
     .map((s) => encodeURIComponent(s))
     .join('/');
-  return `${API}/repos/${owner}/${repo}/contents/${encPath}?ref=${encodeURIComponent(ref)}`;
+  return `${apiRoot()}/repos/${owner}/${repo}/contents/${encPath}?ref=${encodeURIComponent(ref)}`;
 }
 
 /**
@@ -179,7 +181,7 @@ export async function renderMarkdownGfm(
   const token = getToken();
   if (!token) throw new Error('Not signed in');
 
-  const res = await fetch('https://api.github.com/markdown', {
+  const res = await fetch(`${apiRoot()}/markdown`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -234,7 +236,7 @@ export async function fetchActionsJobLogs(
 
   try {
     const res = await fetch(
-      `${API}/repos/${owner}/${repo}/actions/jobs/${jobId}/logs`,
+      `${apiRoot()}/repos/${owner}/${repo}/actions/jobs/${jobId}/logs`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -307,7 +309,7 @@ export function githubActionsJobLogsApiUrl(
   repo: string,
   jobId: number,
 ): string {
-  return `${API}/repos/${owner}/${repo}/actions/jobs/${jobId}/logs`;
+  return `${apiRoot()}/repos/${owner}/${repo}/actions/jobs/${jobId}/logs`;
 }
 
 export function githubActionsHomeUrl(owner: string, repo: string): string {

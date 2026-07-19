@@ -8,7 +8,17 @@ import {
   Workflow,
 } from 'lucide-react';
 import { useEffect, useId, useState, type CSSProperties } from 'react';
-import { clearToken } from '@/lib/auth';
+import {
+  DEFAULT_GRAPHQL_BASE,
+  addAccountAndActivate,
+  getActiveMeKey,
+  hardRefresh,
+  listAccounts,
+  removeAccount,
+  signOutActive,
+  switchAccount,
+} from '@/lib/auth';
+import { useToast } from '@/lib/toast';
 import {
   getThemePreference,
   setThemePreference,
@@ -33,12 +43,22 @@ export function TopBar({
   signedIn,
   onSignedOut,
 }: Props) {
+  const toast = useToast();
   const [theme, setTheme] = useState<ThemePreference>(getThemePreference);
   const [rl, setRl] = useState<RateLimitSnapshot | null>(null);
+  const [accounts, setAccounts] = useState(() => listAccounts());
+  const [switchBusy, setSwitchBusy] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addPat, setAddPat] = useState('');
+  const [addBase, setAddBase] = useState(DEFAULT_GRAPHQL_BASE);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [addBusy, setAddBusy] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const repo = parseRepoFromPath(pathname);
   const accountPopoverId = `topbar-account-${useId().replace(/:/g, '')}`;
   const accountAnchor = `--${accountPopoverId}`;
+  const addDialogId = `topbar-add-account-${useId().replace(/:/g, '')}`;
+  const activeMeKey = getActiveMeKey();
 
   useEffect(() => subscribeRateLimit(setRl), []);
 
@@ -46,7 +66,32 @@ export function TopBar({
     if (repo) rememberRepo(repo.owner, repo.name);
   }, [repo?.owner, repo?.name]);
 
+  useEffect(() => {
+    if (addOpen) {
+      const d = document.getElementById(addDialogId) as HTMLDialogElement | null;
+      d?.showModal();
+    }
+  }, [addOpen, addDialogId]);
+
   const section = repoSection(pathname, repo);
+
+  const refreshAccounts = () => setAccounts(listAccounts());
+
+  const onSwitch = async (meKey: string) => {
+    if (meKey === activeMeKey || switchBusy) return;
+    setSwitchBusy(true);
+    const result = await switchAccount(meKey);
+    setSwitchBusy(false);
+    refreshAccounts();
+    if (!result.ok) {
+      toast.error(
+        result.unhealthy ? 'Account needs re-auth' : 'Could not switch',
+        result.error,
+      );
+      return;
+    }
+    hardRefresh();
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-base-300 bg-base-200">
@@ -211,9 +256,58 @@ export function TopBar({
           >
             {viewerLogin ? (
               <li className="menu-title">
-                <span>@{viewerLogin}</span>
+                <span>
+                  @{viewerLogin}
+                  {activeMeKey ? (
+                    <span className="font-normal opacity-50"> · {activeMeKey}</span>
+                  ) : null}
+                </span>
               </li>
             ) : null}
+            {accounts
+              .filter((a) => a.meKey !== '_migrating')
+              .map((a) => (
+                <li key={a.meKey}>
+                  <button
+                    type="button"
+                    className={cn(
+                      'justify-between gap-2',
+                      a.meKey === activeMeKey && 'active',
+                    )}
+                    disabled={switchBusy || a.meKey === activeMeKey}
+                    onClick={() => void onSwitch(a.meKey)}
+                  >
+                    <span className="flex items-center gap-2 min-w-0">
+                      {a.avatarUrl ? (
+                        <img
+                          src={a.avatarUrl}
+                          alt=""
+                          className="size-5 rounded-full bg-transparent shrink-0"
+                        />
+                      ) : null}
+                      <span className="truncate text-xs">{a.meKey}</span>
+                    </span>
+                    {a.unhealthy ? (
+                      <span className="badge badge-xs badge-warning">re-auth</span>
+                    ) : a.meKey === activeMeKey ? (
+                      <span className="badge badge-xs">active</span>
+                    ) : null}
+                  </button>
+                </li>
+              ))}
+            <li>
+              <button
+                type="button"
+                onClick={() => {
+                  setAddError(null);
+                  setAddPat('');
+                  setAddBase(DEFAULT_GRAPHQL_BASE);
+                  setAddOpen(true);
+                }}
+              >
+                Add account…
+              </button>
+            </li>
             <li>
               <button
                 type="button"
@@ -236,16 +330,125 @@ export function TopBar({
               <li>
                 <button
                   type="button"
+                  className="text-error"
                   onClick={() => {
-                    clearToken();
+                    const key = activeMeKey;
+                    signOutActive();
+                    if (key) {
+                      // already removed by signOutActive
+                    }
                     onSignedOut();
+                    hardRefresh('/');
                   }}
                 >
-                  Sign out
+                  Sign out (remove account)
+                </button>
+              </li>
+            ) : null}
+            {accounts.length > 1 ? (
+              <li>
+                <button
+                  type="button"
+                  className="text-error"
+                  onClick={() => {
+                    if (!activeMeKey) return;
+                    // Remove a non-active: not exposed per-row for density —
+                    // remove others via re-add. Offer remove current sibling:
+                    const others = accounts.filter(
+                      (a) => a.meKey !== activeMeKey && a.meKey !== '_migrating',
+                    );
+                    for (const o of others) removeAccount(o.meKey);
+                    refreshAccounts();
+                    toast.info('Removed other saved accounts');
+                  }}
+                >
+                  Remove other accounts
                 </button>
               </li>
             ) : null}
           </ul>
+
+          <dialog
+            id={addDialogId}
+            className="modal"
+            onClose={() => setAddOpen(false)}
+          >
+            <div className="modal-box space-y-3">
+              <h3 className="font-bold text-lg">Add account</h3>
+              <p className="text-xs opacity-60">
+                Tokens stay in this browser until you remove the account.
+              </p>
+              <label className="form-control w-full">
+                <span className="label-text text-sm">API base URL</span>
+                <input
+                  type="url"
+                  className="input input-bordered input-sm w-full font-mono text-xs"
+                  value={addBase}
+                  onChange={(e) => setAddBase(e.target.value)}
+                  disabled={addBusy}
+                />
+              </label>
+              <label className="form-control w-full">
+                <span className="label-text text-sm">PAT</span>
+                <input
+                  type="password"
+                  className="input input-bordered input-sm w-full"
+                  autoComplete="off"
+                  value={addPat}
+                  onChange={(e) => setAddPat(e.target.value)}
+                  disabled={addBusy}
+                />
+              </label>
+              {addError ? (
+                <div className="alert alert-error text-sm py-2">{addError}</div>
+              ) : null}
+              <div className="modal-action">
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => {
+                    (
+                      document.getElementById(
+                        addDialogId,
+                      ) as HTMLDialogElement | null
+                    )?.close();
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  disabled={!addPat.trim() || addBusy}
+                  onClick={() => {
+                    void (async () => {
+                      setAddBusy(true);
+                      setAddError(null);
+                      const result = await addAccountAndActivate(
+                        addPat,
+                        addBase,
+                      );
+                      setAddBusy(false);
+                      if (!result.ok) {
+                        setAddError(result.error);
+                        return;
+                      }
+                      hardRefresh();
+                    })();
+                  }}
+                >
+                  {addBusy ? (
+                    <span className="loading loading-spinner loading-xs" />
+                  ) : (
+                    'Add and switch'
+                  )}
+                </button>
+              </div>
+            </div>
+            <form method="dialog" className="modal-backdrop">
+              <button type="submit">close</button>
+            </form>
+          </dialog>
         </div>
       </div>
     </header>

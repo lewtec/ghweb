@@ -15,6 +15,7 @@ import {
   GitPullRequest,
   Home,
   Search,
+  UserRound,
   Workflow,
   type LucideIcon,
 } from 'lucide-react';
@@ -45,6 +46,7 @@ const ICONS: Record<GotoIcon, LucideIcon> = {
   home: Home,
   search: Search,
   repo: Code2,
+  account: UserRound,
 };
 
 export function CommandPalette({ open, onOpenChange }: Props) {
@@ -214,7 +216,7 @@ export function CommandPalette({ open, onOpenChange }: Props) {
             placeholder={
               ctx.pathNav
                 ? 'Tab expands path · /pr → PRs  ·  Enter opens'
-                : 'Tab expands /pr /issues  ·  Enter opens  ·  owner/repo'
+                : 'Tab expands /pr /issues /switch  ·  Enter opens  ·  owner/repo'
             }
             className="input input-bordered w-full rounded-none border-0 border-b border-base-300 focus:outline-none bg-base-100 text-base-content"
             autoFocus

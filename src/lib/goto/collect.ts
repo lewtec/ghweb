@@ -3,6 +3,7 @@ import type { GotoCandidate, GotoContext, GotoProvider } from './types';
 
 const GROUP_ORDER = [
   'Path',
+  'Accounts',
   'This repository',
   'Jump',
   'Repositories',
@@ -35,7 +36,9 @@ export function collectGotoCandidates(
     const key =
       c.action.kind === 'navigate'
         ? `nav:${c.action.to}`
-        : `path:${c.action.owner}/${c.action.name}@${c.action.ref}:${c.action.path}`;
+        : c.action.kind === 'switch-account'
+          ? `switch:${c.action.meKey}`
+          : `path:${c.action.owner}/${c.action.name}@${c.action.ref}:${c.action.path}`;
     const idKey = `${key}::${c.id}`;
     if (seen.has(idKey)) return false;
     seen.add(idKey);
