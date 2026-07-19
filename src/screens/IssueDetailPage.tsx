@@ -13,6 +13,7 @@ import { ExternalLink } from '@/components/ExternalLink';
 import { AuthorByline } from '@/components/AuthorByline';
 import { GithubMarkdown } from '@/components/GithubMarkdown';
 import { IssueStateBadge } from '@/components/IssueStateBadge';
+import { CopyableNumber } from '@/components/CopyableNumber';
 
 const query = graphql`
   query IssueDetailPageQuery($owner: String!, $name: String!, $number: Int!) {
@@ -228,7 +229,10 @@ export function IssueDetailPage({ owner, name, number }: Props) {
               >
                 {issue.title}
               </button>{' '}
-              <span className="opacity-50 font-normal">#{issue.number}</span>
+              <CopyableNumber
+                number={issue.number}
+                className="opacity-50 font-normal"
+              />
             </h1>
           )}
           <IssueStateBadge className="shrink-0" state={issue.state} />

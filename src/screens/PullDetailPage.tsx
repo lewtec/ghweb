@@ -26,6 +26,7 @@ import {
   GitPullRequestDraft,
   MessageSquare,
   Trash2,
+  UserPlus,
   XCircle,
 } from 'lucide-react';
 import type {
@@ -48,6 +49,13 @@ import { GithubMarkdown } from '@/components/GithubMarkdown';
 import { PrStateBadge } from '@/components/PrStateBadge';
 import { ReviewStateBadge } from '@/components/ReviewStateBadge';
 import { PrChecksStrip } from '@/components/PrChecksStrip';
+import { ReactionBar } from '@/components/ReactionBar';
+import {
+  RequestReviewersModal,
+  RequestedReviewersStrip,
+  type ReviewerUser,
+} from '@/components/RequestReviewersModal';
+import { CopyableNumber } from '@/components/CopyableNumber';
 import { cn } from '@/lib/cls';
 
 const PullFilesDiff = lazy(() =>
@@ -78,6 +86,7 @@ const query = graphql`
         mergeable
         url
         createdAt
+        ...ReactionBar_reactable
         author {
           login
           avatarUrl(size: 64)
@@ -88,6 +97,41 @@ const query = graphql`
         baseRefName
         headRefName
         headRefOid
+        reviewRequests(first: 40) {
+          nodes {
+            id
+            asCodeOwner
+            requestedReviewer {
+              __typename
+              ... on User {
+                id
+                login
+                userName: name
+                avatarUrl(size: 40)
+              }
+              ... on Team {
+                id
+                teamName: name
+                combinedSlug
+              }
+              ... on Bot {
+                id
+                login
+                avatarUrl(size: 40)
+              }
+            }
+          }
+        }
+        suggestedReviewers {
+          isAuthor
+          isCommenter
+          reviewer {
+            id
+            login
+            name
+            avatarUrl(size: 40)
+          }
+        }
         viewerLatestReview {
           id
           state
@@ -107,34 +151,86 @@ const query = graphql`
             }
           }
         }
-        reviews(first: 20) {
+        # Chronological conversation feed
+        timelineItems(
+          first: 100
+          itemTypes: [
+            ISSUE_COMMENT
+            PULL_REQUEST_REVIEW
+            PULL_REQUEST_COMMIT
+            HEAD_REF_FORCE_PUSHED_EVENT
+          ]
+        ) {
           nodes {
-            id
-            state
-            author {
-              login
-              avatarUrl(size: 40)
-              ... on User {
-                name
+            __typename
+            ... on IssueComment {
+              id
+              body
+              bodyHTML
+              createdAt
+              author {
+                login
+                avatarUrl(size: 40)
+                ... on User {
+                  name
+                }
+              }
+              ...ReactionBar_reactable
+            }
+            ... on PullRequestReview {
+              id
+              state
+              body
+              bodyHTML
+              createdAt
+              viewerDidAuthor
+              author {
+                login
+                avatarUrl(size: 40)
+                ... on User {
+                  name
+                }
+              }
+              ...ReactionBar_reactable
+            }
+            ... on PullRequestCommit {
+              id
+              url
+              commit {
+                oid
+                abbreviatedOid
+                messageHeadline
+                committedDate
+                url
+                author {
+                  name
+                  avatarUrl(size: 40)
+                  user {
+                    login
+                    name
+                    avatarUrl(size: 40)
+                  }
+                }
               }
             }
-            body
-            bodyHTML
-            createdAt
-            viewerDidAuthor
-          }
-        }
-        comments(first: 40) {
-          nodes {
-            id
-            body
-            bodyHTML
-            createdAt
-            author {
-              login
-              avatarUrl(size: 40)
-              ... on User {
-                name
+            ... on HeadRefForcePushedEvent {
+              id
+              createdAt
+              actor {
+                login
+                avatarUrl(size: 40)
+                ... on User {
+                  name
+                }
+              }
+              beforeCommit {
+                abbreviatedOid
+                oid
+              }
+              afterCommit {
+                abbreviatedOid
+                oid
+                url
               }
             }
           }
@@ -327,6 +423,7 @@ export function PullDetailPage({
   const pr = repo?.pullRequest;
   const [reviewBody, setReviewBody] = useState('');
   const [merging, setMerging] = useState(false);
+  const [reviewersOpen, setReviewersOpen] = useState(false);
   /** Single daisyUI popover for draft / review / merge / close */
   const actionsPopoverDomId = `pr-actions-${useId().replace(/:/g, '')}`;
   const actionsAnchorName = `--${actionsPopoverDomId}`;
@@ -387,6 +484,39 @@ export function PullDetailPage({
   const canReview = !pr.merged && pr.state === 'OPEN';
   const viewerLogin = data.viewer?.login;
 
+  const requestedReviewers: ReviewerUser[] = (
+    pr.reviewRequests?.nodes ?? []
+  ).flatMap((n) => {
+    const r = n?.requestedReviewer;
+    if (!r || r.__typename !== 'User' || !('id' in r) || !r.id || !r.login) {
+      return [];
+    }
+    return [
+      {
+        id: r.id,
+        login: r.login,
+        name: 'userName' in r ? (r.userName ?? null) : null,
+        avatarUrl: 'avatarUrl' in r ? (r.avatarUrl ?? null) : null,
+      },
+    ];
+  });
+
+  const suggestedReviewers: ReviewerUser[] = (
+    pr.suggestedReviewers ?? []
+  ).flatMap((s) => {
+    const r = s?.reviewer;
+    if (!r?.id || !r.login) return [];
+    if (r.login === pr.author?.login) return [];
+    return [
+      {
+        id: r.id,
+        login: r.login,
+        name: r.name ?? null,
+        avatarUrl: r.avatarUrl ?? null,
+      },
+    ];
+  });
+
   /** Line comments create a PENDING review; prefer reviews(states:[PENDING]). */
   const findPendingReview = (
     payload: PullDetailPageQuery$data | null | undefined,
@@ -404,9 +534,6 @@ export function PullDetailPage({
       pull.viewerLatestReview.viewerDidAuthor !== false
         ? pull.viewerLatestReview
         : null) ??
-      pull.reviews?.nodes?.find(
-        (r) => r?.state === 'PENDING' && r.viewerDidAuthor,
-      ) ??
       null
     );
   };
@@ -542,7 +669,10 @@ export function PullDetailPage({
         <div className="flex items-start gap-2 w-full">
           <h1 className="text-xl font-semibold min-w-0 flex-1">
             {pr.title}{' '}
-            <span className="opacity-50 font-normal">#{pr.number}</span>
+            <CopyableNumber
+              number={pr.number}
+              className="opacity-50 font-normal"
+            />
           </h1>
           <PrStateBadge
             className="shrink-0"
@@ -585,6 +715,24 @@ export function PullDetailPage({
           <div className="flex flex-nowrap items-center gap-1.5 shrink-0 ms-auto pb-1">
             {pendingReview ? (
               <ReviewStateBadge state="PENDING" label="Pending review" />
+            ) : null}
+
+            {!pr.merged ? (
+              <button
+                type="button"
+                className="btn btn-sm btn-ghost gap-1.5"
+                title="Request reviewers"
+                aria-label="Request reviewers"
+                onClick={() => setReviewersOpen(true)}
+              >
+                <UserPlus className="size-4 shrink-0" aria-hidden />
+                <span className="hidden sm:inline">Reviewers</span>
+                {requestedReviewers.length > 0 ? (
+                  <span className="badge badge-xs badge-ghost tabular-nums">
+                    {requestedReviewers.length}
+                  </span>
+                ) : null}
+              </button>
             ) : null}
 
             <ExternalLink
@@ -917,79 +1065,209 @@ export function PullDetailPage({
                 />
               </div>
               <GithubMarkdown html={pr.bodyHTML} text={pr.body} />
+              <ReactionBar reactable={pr} />
             </div>
 
             <PrChecksStrip owner={owner} name={name} number={number} />
 
-            <div>
-              <div className="text-xs font-medium opacity-60 mb-1">Reviews</div>
-              <ul className="space-y-1 mb-3">
-                {pr.reviews?.nodes?.map((r) =>
-                  r ? (
-                    <li key={r.id} className="text-xs border border-base-300 rounded p-2 space-y-1">
+            <RequestedReviewersStrip
+              requested={requestedReviewers}
+              onOpenModal={() => setReviewersOpen(true)}
+            />
+
+            <div className="space-y-2">
+              <div className="text-xs font-medium opacity-60">Timeline</div>
+              {(pr.timelineItems?.nodes ?? []).map((item, idx) => {
+                if (!item) return null;
+                const key =
+                  'id' in item && item.id
+                    ? item.id
+                    : `${item.__typename}-${idx}`;
+
+                if (item.__typename === 'IssueComment') {
+                  return (
+                    <div
+                      key={key}
+                      className="border border-base-300 rounded-box p-3"
+                    >
+                      <div className="mb-2">
+                        <AuthorByline
+                          author={
+                            item.author
+                              ? {
+                                  login: item.author.login,
+                                  avatarUrl: item.author.avatarUrl,
+                                  name:
+                                    item.author && 'name' in item.author
+                                      ? (
+                                          item.author as {
+                                            name?: string | null;
+                                          }
+                                        ).name
+                                      : null,
+                                }
+                              : null
+                          }
+                          meta={new Date(item.createdAt).toLocaleString()}
+                        />
+                      </div>
+                      <GithubMarkdown
+                        html={item.bodyHTML}
+                        text={item.body}
+                      />
+                      <ReactionBar reactable={item} />
+                    </div>
+                  );
+                }
+
+                if (item.__typename === 'PullRequestReview') {
+                  // Pending draft reviews still show in review UI below
+                  if (item.state === 'PENDING') return null;
+                  return (
+                    <div
+                      key={key}
+                      className="border border-base-300 rounded-box p-3 space-y-1"
+                    >
                       <div className="flex flex-wrap items-center gap-2">
                         <AuthorByline
                           className="flex-1 min-w-0"
                           author={
-                            r.author
+                            item.author
                               ? {
-                                  login: r.author.login,
-                                  avatarUrl: r.author.avatarUrl,
+                                  login: item.author.login,
+                                  avatarUrl: item.author.avatarUrl,
                                   name:
-                                    r.author && 'name' in r.author
-                                      ? (r.author as { name?: string | null })
-                                          .name
+                                    item.author && 'name' in item.author
+                                      ? (
+                                          item.author as {
+                                            name?: string | null;
+                                          }
+                                        ).name
                                       : null,
                                 }
                               : null
                           }
                           meta={
-                            r.createdAt
-                              ? new Date(r.createdAt).toLocaleString()
+                            item.createdAt
+                              ? new Date(item.createdAt).toLocaleString()
                               : undefined
                           }
                         />
-                        <ReviewStateBadge state={r.state} />
+                        <ReviewStateBadge state={item.state} />
                       </div>
-                      {r.body || r.bodyHTML ? (
-                        <div className="mt-1">
-                          <GithubMarkdown html={r.bodyHTML} text={r.body} />
-                        </div>
+                      {item.body || item.bodyHTML ? (
+                        <GithubMarkdown
+                          html={item.bodyHTML}
+                          text={item.body}
+                        />
                       ) : null}
-                    </li>
-                  ) : null,
-                )}
-              </ul>
-            </div>
+                      <ReactionBar reactable={item} />
+                    </div>
+                  );
+                }
 
-            {pr.comments?.nodes?.map((c) => {
-              if (!c) return null;
-              return (
-                <div
-                  key={c.id}
-                  className="border border-base-300 rounded-box p-3"
-                >
-                  <div className="mb-2">
-                    <AuthorByline
-                      author={
-                        c.author
-                          ? {
-                              login: c.author.login,
-                              avatarUrl: c.author.avatarUrl,
-                              name:
-                                c.author && 'name' in c.author
-                                  ? (c.author as { name?: string | null }).name
-                                  : null,
-                            }
-                          : null
-                      }
-                      meta={new Date(c.createdAt).toLocaleString()}
-                    />
-                  </div>
-                  <GithubMarkdown html={c.bodyHTML} text={c.body} />
-                </div>
-              );
-            })}
+                if (item.__typename === 'PullRequestCommit') {
+                  const c = item.commit;
+                  if (!c) return null;
+                  const authorLogin = c.author?.user?.login ?? null;
+                  const authorName =
+                    c.author?.user?.name ?? c.author?.name ?? null;
+                  const authorAvatar =
+                    c.author?.user?.avatarUrl ?? c.author?.avatarUrl ?? null;
+                  return (
+                    <div
+                      key={key}
+                      className="border border-base-300 rounded-box px-3 py-2 bg-base-200/40 space-y-1.5"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <GitCommitHorizontal
+                          className="size-4 shrink-0 opacity-60"
+                          aria-hidden
+                        />
+                        <AuthorByline
+                          className="min-w-0 flex-1"
+                          author={{
+                            login: authorLogin ?? authorName ?? 'unknown',
+                            avatarUrl: authorAvatar,
+                            name: authorName,
+                          }}
+                          meta={new Date(c.committedDate).toLocaleString()}
+                        />
+                        <ExternalLink
+                          href={item.url || c.url}
+                          className="font-mono text-xs link link-hover shrink-0 tabular-nums"
+                          title={c.oid}
+                        >
+                          {c.abbreviatedOid}
+                        </ExternalLink>
+                      </div>
+                      <div className="ps-6 min-w-0 text-sm font-medium break-words">
+                        {c.messageHeadline}
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (item.__typename === 'HeadRefForcePushedEvent') {
+                  const before = item.beforeCommit?.abbreviatedOid ?? '…';
+                  const after = item.afterCommit?.abbreviatedOid ?? '…';
+                  const afterUrl = item.afterCommit?.url;
+                  return (
+                    <div
+                      key={key}
+                      className="flex flex-wrap items-center gap-2 text-sm border border-base-300 rounded-box px-3 py-2 bg-base-200/40"
+                    >
+                      <GitBranch
+                        className="size-4 shrink-0 opacity-60"
+                        aria-hidden
+                      />
+                      <AuthorByline
+                        className="min-w-0 max-w-[12rem] sm:max-w-[16rem] !w-auto"
+                        author={
+                          item.actor
+                            ? {
+                                login: item.actor.login,
+                                avatarUrl: item.actor.avatarUrl,
+                                name:
+                                  item.actor && 'name' in item.actor
+                                    ? (
+                                        item.actor as {
+                                          name?: string | null;
+                                        }
+                                      ).name
+                                    : null,
+                              }
+                            : null
+                        }
+                      />
+                      <span className="opacity-80">
+                        force-pushed the branch from{' '}
+                        <span className="font-mono text-xs">{before}</span>
+                        {' to '}
+                        {afterUrl ? (
+                          <ExternalLink
+                            href={afterUrl}
+                            className="font-mono text-xs link link-hover"
+                          >
+                            {after}
+                          </ExternalLink>
+                        ) : (
+                          <span className="font-mono text-xs">{after}</span>
+                        )}
+                      </span>
+                      <span className="text-xs opacity-50 shrink-0 ms-auto">
+                        {new Date(item.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+                  );
+                }
+
+                return null;
+              })}
+              {(pr.timelineItems?.nodes?.length ?? 0) === 0 ? (
+                <p className="text-sm opacity-50">No timeline activity yet.</p>
+              ) : null}
+            </div>
 
             {!pr.merged && pr.state === 'OPEN' ? (
               <div className="space-y-2 border border-base-300 rounded-box p-3">
@@ -1038,6 +1316,17 @@ export function PullDetailPage({
             ) : null}
           </div>
         )}
+
+        <RequestReviewersModal
+          open={reviewersOpen}
+          onClose={() => setReviewersOpen(false)}
+          pullRequestId={pr.id}
+          owner={owner}
+          name={name}
+          requested={requestedReviewers}
+          suggested={suggestedReviewers}
+          onChanged={refresh}
+        />
       </div>
     </div>
   );

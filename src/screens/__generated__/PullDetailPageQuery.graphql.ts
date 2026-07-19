@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<6ea5e6d32962aee04e38d3ab696270ea>>
+ * @generated SignedSource<<f072791c9643dd1b8ca4cd9d9c9276a3>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -9,6 +9,7 @@
 // @ts-nocheck
 
 import { ConcreteRequest } from 'relay-runtime';
+import { FragmentRefs } from "relay-runtime";
 export type DiffSide = "LEFT" | "RIGHT" | "%future added value";
 export type MergeableState = "CONFLICTING" | "MERGEABLE" | "UNKNOWN" | "%future added value";
 export type PullRequestMergeMethod = "MERGE" | "REBASE" | "SQUASH" | "%future added value";
@@ -32,19 +33,6 @@ export type PullDetailPageQuery$data = {
       readonly baseRefName: string;
       readonly body: string;
       readonly bodyHTML: any;
-      readonly comments: {
-        readonly nodes: ReadonlyArray<{
-          readonly author: {
-            readonly avatarUrl: any;
-            readonly login: string;
-            readonly name?: string | null | undefined;
-          } | null | undefined;
-          readonly body: string;
-          readonly bodyHTML: any;
-          readonly createdAt: any;
-          readonly id: string;
-        } | null | undefined> | null | undefined;
-      };
       readonly createdAt: any;
       readonly headRefName: string;
       readonly headRefOid: any;
@@ -63,6 +51,33 @@ export type PullDetailPageQuery$data = {
           readonly id: string;
           readonly state: PullRequestReviewState;
           readonly viewerDidAuthor: boolean;
+        } | null | undefined> | null | undefined;
+      } | null | undefined;
+      readonly reviewRequests: {
+        readonly nodes: ReadonlyArray<{
+          readonly asCodeOwner: boolean;
+          readonly id: string;
+          readonly requestedReviewer: {
+            readonly __typename: "Bot";
+            readonly avatarUrl: any;
+            readonly id: string;
+            readonly login: string;
+          } | {
+            readonly __typename: "Team";
+            readonly combinedSlug: string;
+            readonly id: string;
+            readonly teamName: string;
+          } | {
+            readonly __typename: "User";
+            readonly avatarUrl: any;
+            readonly id: string;
+            readonly login: string;
+            readonly userName: string | null | undefined;
+          } | {
+            // This will never be '%other', but we need some
+            // value in case none of the concrete values match.
+            readonly __typename: "%other";
+          } | null | undefined;
         } | null | undefined> | null | undefined;
       } | null | undefined;
       readonly reviewThreads: {
@@ -86,8 +101,70 @@ export type PullDetailPageQuery$data = {
           readonly startLine: number | null | undefined;
         } | null | undefined> | null | undefined;
       };
-      readonly reviews: {
+      readonly state: PullRequestState;
+      readonly suggestedReviewers: ReadonlyArray<{
+        readonly isAuthor: boolean;
+        readonly isCommenter: boolean;
+        readonly reviewer: {
+          readonly avatarUrl: any;
+          readonly id: string;
+          readonly login: string;
+          readonly name: string | null | undefined;
+        };
+      } | null | undefined>;
+      readonly timelineItems: {
         readonly nodes: ReadonlyArray<{
+          readonly __typename: "HeadRefForcePushedEvent";
+          readonly actor: {
+            readonly avatarUrl: any;
+            readonly login: string;
+            readonly name?: string | null | undefined;
+          } | null | undefined;
+          readonly afterCommit: {
+            readonly abbreviatedOid: string;
+            readonly oid: any;
+            readonly url: any;
+          } | null | undefined;
+          readonly beforeCommit: {
+            readonly abbreviatedOid: string;
+            readonly oid: any;
+          } | null | undefined;
+          readonly createdAt: any;
+          readonly id: string;
+        } | {
+          readonly __typename: "IssueComment";
+          readonly author: {
+            readonly avatarUrl: any;
+            readonly login: string;
+            readonly name?: string | null | undefined;
+          } | null | undefined;
+          readonly body: string;
+          readonly bodyHTML: any;
+          readonly createdAt: any;
+          readonly id: string;
+          readonly " $fragmentSpreads": FragmentRefs<"ReactionBar_reactable">;
+        } | {
+          readonly __typename: "PullRequestCommit";
+          readonly commit: {
+            readonly abbreviatedOid: string;
+            readonly author: {
+              readonly avatarUrl: any;
+              readonly name: string | null | undefined;
+              readonly user: {
+                readonly avatarUrl: any;
+                readonly login: string;
+                readonly name: string | null | undefined;
+              } | null | undefined;
+            } | null | undefined;
+            readonly committedDate: any;
+            readonly messageHeadline: string;
+            readonly oid: any;
+            readonly url: any;
+          };
+          readonly id: string;
+          readonly url: any;
+        } | {
+          readonly __typename: "PullRequestReview";
           readonly author: {
             readonly avatarUrl: any;
             readonly login: string;
@@ -99,9 +176,13 @@ export type PullDetailPageQuery$data = {
           readonly id: string;
           readonly state: PullRequestReviewState;
           readonly viewerDidAuthor: boolean;
+          readonly " $fragmentSpreads": FragmentRefs<"ReactionBar_reactable">;
+        } | {
+          // This will never be '%other', but we need some
+          // value in case none of the concrete values match.
+          readonly __typename: "%other";
         } | null | undefined> | null | undefined;
-      } | null | undefined;
-      readonly state: PullRequestState;
+      };
       readonly title: string;
       readonly url: any;
       readonly viewerLatestReview: {
@@ -111,6 +192,7 @@ export type PullDetailPageQuery$data = {
         readonly state: PullRequestReviewState;
         readonly viewerDidAuthor: boolean;
       } | null | undefined;
+      readonly " $fragmentSpreads": FragmentRefs<"ReactionBar_reactable">;
     } | null | undefined;
     readonly rebaseMergeAllowed: boolean;
     readonly squashMergeAllowed: boolean;
@@ -276,6 +358,11 @@ v21 = {
   "storageKey": null
 },
 v22 = {
+  "args": null,
+  "kind": "FragmentSpread",
+  "name": "ReactionBar_reactable"
+},
+v23 = {
   "alias": null,
   "args": [
     {
@@ -288,95 +375,63 @@ v22 = {
   "name": "avatarUrl",
   "storageKey": "avatarUrl(size:64)"
 },
-v23 = {
+v24 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "name",
+  "storageKey": null
+},
+v25 = {
   "kind": "InlineFragment",
   "selections": [
-    {
-      "alias": null,
-      "args": null,
-      "kind": "ScalarField",
-      "name": "name",
-      "storageKey": null
-    }
+    (v24/*: any*/)
   ],
   "type": "User",
   "abstractKey": null
 },
-v24 = {
+v26 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "baseRefName",
   "storageKey": null
 },
-v25 = {
+v27 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "headRefName",
   "storageKey": null
 },
-v26 = {
+v28 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "headRefOid",
   "storageKey": null
 },
-v27 = {
-  "alias": null,
-  "args": null,
-  "kind": "ScalarField",
-  "name": "viewerDidAuthor",
-  "storageKey": null
-},
-v28 = {
-  "alias": null,
-  "args": null,
-  "concreteType": "PullRequestReview",
-  "kind": "LinkedField",
-  "name": "viewerLatestReview",
-  "plural": false,
-  "selections": [
-    (v11/*: any*/),
-    (v16/*: any*/),
-    (v14/*: any*/),
-    (v15/*: any*/),
-    (v27/*: any*/)
-  ],
-  "storageKey": null
-},
 v29 = [
   {
     "kind": "Literal",
     "name": "first",
-    "value": 10
-  },
-  {
-    "kind": "Literal",
-    "name": "states",
-    "value": [
-      "PENDING"
-    ]
+    "value": 40
   }
 ],
 v30 = {
   "alias": null,
   "args": null,
-  "concreteType": null,
-  "kind": "LinkedField",
-  "name": "author",
-  "plural": false,
-  "selections": (v4/*: any*/),
+  "kind": "ScalarField",
+  "name": "asCodeOwner",
   "storageKey": null
 },
-v31 = [
-  {
-    "kind": "Literal",
-    "name": "first",
-    "value": 20
-  }
-],
+v31 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "__typename",
+  "storageKey": null
+},
 v32 = {
   "alias": null,
   "args": [
@@ -391,83 +446,163 @@ v32 = {
   "storageKey": "avatarUrl(size:40)"
 },
 v33 = {
-  "alias": null,
-  "args": null,
-  "concreteType": null,
-  "kind": "LinkedField",
-  "name": "author",
-  "plural": false,
+  "kind": "InlineFragment",
   "selections": [
+    (v11/*: any*/),
     (v3/*: any*/),
-    (v32/*: any*/),
-    (v23/*: any*/)
+    {
+      "alias": "userName",
+      "args": null,
+      "kind": "ScalarField",
+      "name": "name",
+      "storageKey": null
+    },
+    (v32/*: any*/)
   ],
-  "storageKey": null
+  "type": "User",
+  "abstractKey": null
 },
-v34 = [
-  {
-    "kind": "Literal",
-    "name": "first",
-    "value": 40
-  }
-],
-v35 = [
-  {
-    "kind": "Literal",
-    "name": "first",
-    "value": 80
-  }
-],
+v34 = {
+  "kind": "InlineFragment",
+  "selections": [
+    (v11/*: any*/),
+    {
+      "alias": "teamName",
+      "args": null,
+      "kind": "ScalarField",
+      "name": "name",
+      "storageKey": null
+    },
+    {
+      "alias": null,
+      "args": null,
+      "kind": "ScalarField",
+      "name": "combinedSlug",
+      "storageKey": null
+    }
+  ],
+  "type": "Team",
+  "abstractKey": null
+},
+v35 = {
+  "kind": "InlineFragment",
+  "selections": [
+    (v11/*: any*/),
+    (v3/*: any*/),
+    (v32/*: any*/)
+  ],
+  "type": "Bot",
+  "abstractKey": null
+},
 v36 = {
   "alias": null,
   "args": null,
-  "kind": "ScalarField",
-  "name": "path",
+  "concreteType": "SuggestedReviewer",
+  "kind": "LinkedField",
+  "name": "suggestedReviewers",
+  "plural": true,
+  "selections": [
+    {
+      "alias": null,
+      "args": null,
+      "kind": "ScalarField",
+      "name": "isAuthor",
+      "storageKey": null
+    },
+    {
+      "alias": null,
+      "args": null,
+      "kind": "ScalarField",
+      "name": "isCommenter",
+      "storageKey": null
+    },
+    {
+      "alias": null,
+      "args": null,
+      "concreteType": "User",
+      "kind": "LinkedField",
+      "name": "reviewer",
+      "plural": false,
+      "selections": [
+        (v11/*: any*/),
+        (v3/*: any*/),
+        (v24/*: any*/),
+        (v32/*: any*/)
+      ],
+      "storageKey": null
+    }
+  ],
   "storageKey": null
 },
 v37 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "line",
+  "name": "viewerDidAuthor",
   "storageKey": null
 },
 v38 = {
   "alias": null,
   "args": null,
-  "kind": "ScalarField",
-  "name": "startLine",
+  "concreteType": "PullRequestReview",
+  "kind": "LinkedField",
+  "name": "viewerLatestReview",
+  "plural": false,
+  "selections": [
+    (v11/*: any*/),
+    (v16/*: any*/),
+    (v14/*: any*/),
+    (v15/*: any*/),
+    (v37/*: any*/)
+  ],
   "storageKey": null
 },
-v39 = {
-  "alias": null,
-  "args": null,
-  "kind": "ScalarField",
-  "name": "diffSide",
-  "storageKey": null
-},
+v39 = [
+  {
+    "kind": "Literal",
+    "name": "first",
+    "value": 10
+  },
+  {
+    "kind": "Literal",
+    "name": "states",
+    "value": [
+      "PENDING"
+    ]
+  }
+],
 v40 = {
   "alias": null,
   "args": null,
-  "kind": "ScalarField",
-  "name": "isResolved",
+  "concreteType": null,
+  "kind": "LinkedField",
+  "name": "author",
+  "plural": false,
+  "selections": (v4/*: any*/),
   "storageKey": null
 },
-v41 = {
-  "alias": null,
-  "args": null,
-  "kind": "ScalarField",
-  "name": "__typename",
-  "storageKey": null
-},
-v42 = {
-  "kind": "InlineFragment",
-  "selections": [
-    (v11/*: any*/)
-  ],
-  "type": "Node",
-  "abstractKey": "__isNode"
-},
+v41 = [
+  {
+    "kind": "Literal",
+    "name": "first",
+    "value": 100
+  },
+  {
+    "kind": "Literal",
+    "name": "itemTypes",
+    "value": [
+      "ISSUE_COMMENT",
+      "PULL_REQUEST_REVIEW",
+      "PULL_REQUEST_COMMIT",
+      "HEAD_REF_FORCE_PUSHED_EVENT"
+    ]
+  }
+],
+v42 = [
+  (v3/*: any*/),
+  (v32/*: any*/),
+  (v25/*: any*/)
+],
 v43 = {
   "alias": null,
   "args": null,
@@ -475,14 +610,95 @@ v43 = {
   "kind": "LinkedField",
   "name": "author",
   "plural": false,
-  "selections": [
-    (v41/*: any*/),
-    (v3/*: any*/),
-    (v42/*: any*/)
-  ],
+  "selections": (v42/*: any*/),
   "storageKey": null
 },
 v44 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "oid",
+  "storageKey": null
+},
+v45 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "abbreviatedOid",
+  "storageKey": null
+},
+v46 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "messageHeadline",
+  "storageKey": null
+},
+v47 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "committedDate",
+  "storageKey": null
+},
+v48 = [
+  {
+    "kind": "Literal",
+    "name": "first",
+    "value": 80
+  }
+],
+v49 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "path",
+  "storageKey": null
+},
+v50 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "line",
+  "storageKey": null
+},
+v51 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "startLine",
+  "storageKey": null
+},
+v52 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "diffSide",
+  "storageKey": null
+},
+v53 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "isResolved",
+  "storageKey": null
+},
+v54 = [
+  {
+    "kind": "Literal",
+    "name": "first",
+    "value": 20
+  }
+],
+v55 = {
+  "kind": "InlineFragment",
+  "selections": [
+    (v11/*: any*/)
+  ],
+  "type": "Node",
+  "abstractKey": "__isNode"
+},
+v56 = {
   "alias": null,
   "args": null,
   "concreteType": null,
@@ -490,13 +706,91 @@ v44 = {
   "name": "author",
   "plural": false,
   "selections": [
-    (v41/*: any*/),
+    (v31/*: any*/),
     (v3/*: any*/),
-    (v32/*: any*/),
-    (v23/*: any*/),
-    (v42/*: any*/)
+    (v55/*: any*/)
   ],
   "storageKey": null
+},
+v57 = [
+  (v31/*: any*/),
+  (v3/*: any*/),
+  (v32/*: any*/),
+  (v25/*: any*/),
+  (v55/*: any*/)
+],
+v58 = {
+  "alias": null,
+  "args": null,
+  "concreteType": null,
+  "kind": "LinkedField",
+  "name": "author",
+  "plural": false,
+  "selections": (v57/*: any*/),
+  "storageKey": null
+},
+v59 = {
+  "kind": "InlineFragment",
+  "selections": [
+    {
+      "alias": null,
+      "args": null,
+      "kind": "ScalarField",
+      "name": "viewerCanReact",
+      "storageKey": null
+    },
+    {
+      "alias": null,
+      "args": null,
+      "concreteType": "ReactionGroup",
+      "kind": "LinkedField",
+      "name": "reactionGroups",
+      "plural": true,
+      "selections": [
+        {
+          "alias": null,
+          "args": null,
+          "kind": "ScalarField",
+          "name": "content",
+          "storageKey": null
+        },
+        {
+          "alias": null,
+          "args": null,
+          "kind": "ScalarField",
+          "name": "viewerHasReacted",
+          "storageKey": null
+        },
+        {
+          "alias": null,
+          "args": [
+            {
+              "kind": "Literal",
+              "name": "first",
+              "value": 1
+            }
+          ],
+          "concreteType": "ReactorConnection",
+          "kind": "LinkedField",
+          "name": "reactors",
+          "plural": false,
+          "selections": [
+            {
+              "alias": null,
+              "args": null,
+              "kind": "ScalarField",
+              "name": "totalCount",
+              "storageKey": null
+            }
+          ],
+          "storageKey": "reactors(first:1)"
+        }
+      ],
+      "storageKey": null
+    }
+  ],
+  "type": "Reactable",
+  "abstractKey": "__isReactable"
 };
 return {
   "fragment": {
@@ -550,6 +844,7 @@ return {
               (v19/*: any*/),
               (v20/*: any*/),
               (v21/*: any*/),
+              (v22/*: any*/),
               {
                 "alias": null,
                 "args": null,
@@ -559,18 +854,58 @@ return {
                 "plural": false,
                 "selections": [
                   (v3/*: any*/),
-                  (v22/*: any*/),
-                  (v23/*: any*/)
+                  (v23/*: any*/),
+                  (v25/*: any*/)
                 ],
                 "storageKey": null
               },
-              (v24/*: any*/),
-              (v25/*: any*/),
               (v26/*: any*/),
+              (v27/*: any*/),
               (v28/*: any*/),
               {
-                "alias": "pendingReviews",
+                "alias": null,
                 "args": (v29/*: any*/),
+                "concreteType": "ReviewRequestConnection",
+                "kind": "LinkedField",
+                "name": "reviewRequests",
+                "plural": false,
+                "selections": [
+                  {
+                    "alias": null,
+                    "args": null,
+                    "concreteType": "ReviewRequest",
+                    "kind": "LinkedField",
+                    "name": "nodes",
+                    "plural": true,
+                    "selections": [
+                      (v11/*: any*/),
+                      (v30/*: any*/),
+                      {
+                        "alias": null,
+                        "args": null,
+                        "concreteType": null,
+                        "kind": "LinkedField",
+                        "name": "requestedReviewer",
+                        "plural": false,
+                        "selections": [
+                          (v31/*: any*/),
+                          (v33/*: any*/),
+                          (v34/*: any*/),
+                          (v35/*: any*/)
+                        ],
+                        "storageKey": null
+                      }
+                    ],
+                    "storageKey": null
+                  }
+                ],
+                "storageKey": "reviewRequests(first:40)"
+              },
+              (v36/*: any*/),
+              (v38/*: any*/),
+              {
+                "alias": "pendingReviews",
+                "args": (v39/*: any*/),
                 "concreteType": "PullRequestReviewConnection",
                 "kind": "LinkedField",
                 "name": "reviews",
@@ -588,8 +923,8 @@ return {
                       (v16/*: any*/),
                       (v14/*: any*/),
                       (v15/*: any*/),
-                      (v27/*: any*/),
-                      (v30/*: any*/)
+                      (v37/*: any*/),
+                      (v40/*: any*/)
                     ],
                     "storageKey": null
                   }
@@ -598,63 +933,156 @@ return {
               },
               {
                 "alias": null,
-                "args": (v31/*: any*/),
-                "concreteType": "PullRequestReviewConnection",
+                "args": (v41/*: any*/),
+                "concreteType": "PullRequestTimelineItemsConnection",
                 "kind": "LinkedField",
-                "name": "reviews",
+                "name": "timelineItems",
                 "plural": false,
                 "selections": [
                   {
                     "alias": null,
                     "args": null,
-                    "concreteType": "PullRequestReview",
+                    "concreteType": null,
                     "kind": "LinkedField",
                     "name": "nodes",
                     "plural": true,
                     "selections": [
-                      (v11/*: any*/),
-                      (v16/*: any*/),
-                      (v33/*: any*/),
-                      (v14/*: any*/),
-                      (v15/*: any*/),
-                      (v21/*: any*/),
-                      (v27/*: any*/)
+                      (v31/*: any*/),
+                      {
+                        "kind": "InlineFragment",
+                        "selections": [
+                          (v11/*: any*/),
+                          (v14/*: any*/),
+                          (v15/*: any*/),
+                          (v21/*: any*/),
+                          (v43/*: any*/),
+                          (v22/*: any*/)
+                        ],
+                        "type": "IssueComment",
+                        "abstractKey": null
+                      },
+                      {
+                        "kind": "InlineFragment",
+                        "selections": [
+                          (v11/*: any*/),
+                          (v16/*: any*/),
+                          (v14/*: any*/),
+                          (v15/*: any*/),
+                          (v21/*: any*/),
+                          (v37/*: any*/),
+                          (v43/*: any*/),
+                          (v22/*: any*/)
+                        ],
+                        "type": "PullRequestReview",
+                        "abstractKey": null
+                      },
+                      {
+                        "kind": "InlineFragment",
+                        "selections": [
+                          (v11/*: any*/),
+                          (v20/*: any*/),
+                          {
+                            "alias": null,
+                            "args": null,
+                            "concreteType": "Commit",
+                            "kind": "LinkedField",
+                            "name": "commit",
+                            "plural": false,
+                            "selections": [
+                              (v44/*: any*/),
+                              (v45/*: any*/),
+                              (v46/*: any*/),
+                              (v47/*: any*/),
+                              (v20/*: any*/),
+                              {
+                                "alias": null,
+                                "args": null,
+                                "concreteType": "GitActor",
+                                "kind": "LinkedField",
+                                "name": "author",
+                                "plural": false,
+                                "selections": [
+                                  (v24/*: any*/),
+                                  (v32/*: any*/),
+                                  {
+                                    "alias": null,
+                                    "args": null,
+                                    "concreteType": "User",
+                                    "kind": "LinkedField",
+                                    "name": "user",
+                                    "plural": false,
+                                    "selections": [
+                                      (v3/*: any*/),
+                                      (v24/*: any*/),
+                                      (v32/*: any*/)
+                                    ],
+                                    "storageKey": null
+                                  }
+                                ],
+                                "storageKey": null
+                              }
+                            ],
+                            "storageKey": null
+                          }
+                        ],
+                        "type": "PullRequestCommit",
+                        "abstractKey": null
+                      },
+                      {
+                        "kind": "InlineFragment",
+                        "selections": [
+                          (v11/*: any*/),
+                          (v21/*: any*/),
+                          {
+                            "alias": null,
+                            "args": null,
+                            "concreteType": null,
+                            "kind": "LinkedField",
+                            "name": "actor",
+                            "plural": false,
+                            "selections": (v42/*: any*/),
+                            "storageKey": null
+                          },
+                          {
+                            "alias": null,
+                            "args": null,
+                            "concreteType": "Commit",
+                            "kind": "LinkedField",
+                            "name": "beforeCommit",
+                            "plural": false,
+                            "selections": [
+                              (v45/*: any*/),
+                              (v44/*: any*/)
+                            ],
+                            "storageKey": null
+                          },
+                          {
+                            "alias": null,
+                            "args": null,
+                            "concreteType": "Commit",
+                            "kind": "LinkedField",
+                            "name": "afterCommit",
+                            "plural": false,
+                            "selections": [
+                              (v45/*: any*/),
+                              (v44/*: any*/),
+                              (v20/*: any*/)
+                            ],
+                            "storageKey": null
+                          }
+                        ],
+                        "type": "HeadRefForcePushedEvent",
+                        "abstractKey": null
+                      }
                     ],
                     "storageKey": null
                   }
                 ],
-                "storageKey": "reviews(first:20)"
+                "storageKey": "timelineItems(first:100,itemTypes:[\"ISSUE_COMMENT\",\"PULL_REQUEST_REVIEW\",\"PULL_REQUEST_COMMIT\",\"HEAD_REF_FORCE_PUSHED_EVENT\"])"
               },
               {
                 "alias": null,
-                "args": (v34/*: any*/),
-                "concreteType": "IssueCommentConnection",
-                "kind": "LinkedField",
-                "name": "comments",
-                "plural": false,
-                "selections": [
-                  {
-                    "alias": null,
-                    "args": null,
-                    "concreteType": "IssueComment",
-                    "kind": "LinkedField",
-                    "name": "nodes",
-                    "plural": true,
-                    "selections": [
-                      (v11/*: any*/),
-                      (v14/*: any*/),
-                      (v15/*: any*/),
-                      (v21/*: any*/),
-                      (v33/*: any*/)
-                    ],
-                    "storageKey": null
-                  }
-                ],
-                "storageKey": "comments(first:40)"
-              },
-              {
-                "alias": null,
-                "args": (v35/*: any*/),
+                "args": (v48/*: any*/),
                 "concreteType": "PullRequestReviewThreadConnection",
                 "kind": "LinkedField",
                 "name": "reviewThreads",
@@ -669,14 +1097,14 @@ return {
                     "plural": true,
                     "selections": [
                       (v11/*: any*/),
-                      (v36/*: any*/),
-                      (v37/*: any*/),
-                      (v38/*: any*/),
-                      (v39/*: any*/),
-                      (v40/*: any*/),
+                      (v49/*: any*/),
+                      (v50/*: any*/),
+                      (v51/*: any*/),
+                      (v52/*: any*/),
+                      (v53/*: any*/),
                       {
                         "alias": null,
-                        "args": (v31/*: any*/),
+                        "args": (v54/*: any*/),
                         "concreteType": "PullRequestReviewCommentConnection",
                         "kind": "LinkedField",
                         "name": "comments",
@@ -694,7 +1122,7 @@ return {
                               (v14/*: any*/),
                               (v15/*: any*/),
                               (v16/*: any*/),
-                              (v30/*: any*/)
+                              (v40/*: any*/)
                             ],
                             "storageKey": null
                           }
@@ -779,21 +1207,62 @@ return {
                 "name": "author",
                 "plural": false,
                 "selections": [
-                  (v41/*: any*/),
+                  (v31/*: any*/),
                   (v3/*: any*/),
-                  (v22/*: any*/),
                   (v23/*: any*/),
-                  (v42/*: any*/)
+                  (v25/*: any*/),
+                  (v55/*: any*/)
                 ],
                 "storageKey": null
               },
-              (v24/*: any*/),
-              (v25/*: any*/),
               (v26/*: any*/),
+              (v27/*: any*/),
               (v28/*: any*/),
               {
-                "alias": "pendingReviews",
+                "alias": null,
                 "args": (v29/*: any*/),
+                "concreteType": "ReviewRequestConnection",
+                "kind": "LinkedField",
+                "name": "reviewRequests",
+                "plural": false,
+                "selections": [
+                  {
+                    "alias": null,
+                    "args": null,
+                    "concreteType": "ReviewRequest",
+                    "kind": "LinkedField",
+                    "name": "nodes",
+                    "plural": true,
+                    "selections": [
+                      (v11/*: any*/),
+                      (v30/*: any*/),
+                      {
+                        "alias": null,
+                        "args": null,
+                        "concreteType": null,
+                        "kind": "LinkedField",
+                        "name": "requestedReviewer",
+                        "plural": false,
+                        "selections": [
+                          (v31/*: any*/),
+                          (v33/*: any*/),
+                          (v34/*: any*/),
+                          (v35/*: any*/),
+                          (v55/*: any*/)
+                        ],
+                        "storageKey": null
+                      }
+                    ],
+                    "storageKey": null
+                  }
+                ],
+                "storageKey": "reviewRequests(first:40)"
+              },
+              (v36/*: any*/),
+              (v38/*: any*/),
+              {
+                "alias": "pendingReviews",
+                "args": (v39/*: any*/),
                 "concreteType": "PullRequestReviewConnection",
                 "kind": "LinkedField",
                 "name": "reviews",
@@ -811,8 +1280,8 @@ return {
                       (v16/*: any*/),
                       (v14/*: any*/),
                       (v15/*: any*/),
-                      (v27/*: any*/),
-                      (v43/*: any*/)
+                      (v37/*: any*/),
+                      (v56/*: any*/)
                     ],
                     "storageKey": null
                   }
@@ -821,63 +1290,161 @@ return {
               },
               {
                 "alias": null,
-                "args": (v31/*: any*/),
-                "concreteType": "PullRequestReviewConnection",
+                "args": (v41/*: any*/),
+                "concreteType": "PullRequestTimelineItemsConnection",
                 "kind": "LinkedField",
-                "name": "reviews",
+                "name": "timelineItems",
                 "plural": false,
                 "selections": [
                   {
                     "alias": null,
                     "args": null,
-                    "concreteType": "PullRequestReview",
+                    "concreteType": null,
                     "kind": "LinkedField",
                     "name": "nodes",
                     "plural": true,
                     "selections": [
-                      (v11/*: any*/),
-                      (v16/*: any*/),
-                      (v44/*: any*/),
-                      (v14/*: any*/),
-                      (v15/*: any*/),
-                      (v21/*: any*/),
-                      (v27/*: any*/)
+                      (v31/*: any*/),
+                      {
+                        "kind": "InlineFragment",
+                        "selections": [
+                          (v11/*: any*/),
+                          (v14/*: any*/),
+                          (v15/*: any*/),
+                          (v21/*: any*/),
+                          (v58/*: any*/),
+                          (v59/*: any*/)
+                        ],
+                        "type": "IssueComment",
+                        "abstractKey": null
+                      },
+                      {
+                        "kind": "InlineFragment",
+                        "selections": [
+                          (v11/*: any*/),
+                          (v16/*: any*/),
+                          (v14/*: any*/),
+                          (v15/*: any*/),
+                          (v21/*: any*/),
+                          (v37/*: any*/),
+                          (v58/*: any*/),
+                          (v59/*: any*/)
+                        ],
+                        "type": "PullRequestReview",
+                        "abstractKey": null
+                      },
+                      {
+                        "kind": "InlineFragment",
+                        "selections": [
+                          (v11/*: any*/),
+                          (v20/*: any*/),
+                          {
+                            "alias": null,
+                            "args": null,
+                            "concreteType": "Commit",
+                            "kind": "LinkedField",
+                            "name": "commit",
+                            "plural": false,
+                            "selections": [
+                              (v44/*: any*/),
+                              (v45/*: any*/),
+                              (v46/*: any*/),
+                              (v47/*: any*/),
+                              (v20/*: any*/),
+                              {
+                                "alias": null,
+                                "args": null,
+                                "concreteType": "GitActor",
+                                "kind": "LinkedField",
+                                "name": "author",
+                                "plural": false,
+                                "selections": [
+                                  (v24/*: any*/),
+                                  (v32/*: any*/),
+                                  {
+                                    "alias": null,
+                                    "args": null,
+                                    "concreteType": "User",
+                                    "kind": "LinkedField",
+                                    "name": "user",
+                                    "plural": false,
+                                    "selections": [
+                                      (v3/*: any*/),
+                                      (v24/*: any*/),
+                                      (v32/*: any*/),
+                                      (v11/*: any*/)
+                                    ],
+                                    "storageKey": null
+                                  }
+                                ],
+                                "storageKey": null
+                              },
+                              (v11/*: any*/)
+                            ],
+                            "storageKey": null
+                          }
+                        ],
+                        "type": "PullRequestCommit",
+                        "abstractKey": null
+                      },
+                      {
+                        "kind": "InlineFragment",
+                        "selections": [
+                          (v11/*: any*/),
+                          (v21/*: any*/),
+                          {
+                            "alias": null,
+                            "args": null,
+                            "concreteType": null,
+                            "kind": "LinkedField",
+                            "name": "actor",
+                            "plural": false,
+                            "selections": (v57/*: any*/),
+                            "storageKey": null
+                          },
+                          {
+                            "alias": null,
+                            "args": null,
+                            "concreteType": "Commit",
+                            "kind": "LinkedField",
+                            "name": "beforeCommit",
+                            "plural": false,
+                            "selections": [
+                              (v45/*: any*/),
+                              (v44/*: any*/),
+                              (v11/*: any*/)
+                            ],
+                            "storageKey": null
+                          },
+                          {
+                            "alias": null,
+                            "args": null,
+                            "concreteType": "Commit",
+                            "kind": "LinkedField",
+                            "name": "afterCommit",
+                            "plural": false,
+                            "selections": [
+                              (v45/*: any*/),
+                              (v44/*: any*/),
+                              (v20/*: any*/),
+                              (v11/*: any*/)
+                            ],
+                            "storageKey": null
+                          }
+                        ],
+                        "type": "HeadRefForcePushedEvent",
+                        "abstractKey": null
+                      },
+                      (v55/*: any*/)
                     ],
                     "storageKey": null
                   }
                 ],
-                "storageKey": "reviews(first:20)"
+                "storageKey": "timelineItems(first:100,itemTypes:[\"ISSUE_COMMENT\",\"PULL_REQUEST_REVIEW\",\"PULL_REQUEST_COMMIT\",\"HEAD_REF_FORCE_PUSHED_EVENT\"])"
               },
               {
                 "alias": null,
-                "args": (v34/*: any*/),
-                "concreteType": "IssueCommentConnection",
-                "kind": "LinkedField",
-                "name": "comments",
-                "plural": false,
-                "selections": [
-                  {
-                    "alias": null,
-                    "args": null,
-                    "concreteType": "IssueComment",
-                    "kind": "LinkedField",
-                    "name": "nodes",
-                    "plural": true,
-                    "selections": [
-                      (v11/*: any*/),
-                      (v14/*: any*/),
-                      (v15/*: any*/),
-                      (v21/*: any*/),
-                      (v44/*: any*/)
-                    ],
-                    "storageKey": null
-                  }
-                ],
-                "storageKey": "comments(first:40)"
-              },
-              {
-                "alias": null,
-                "args": (v35/*: any*/),
+                "args": (v48/*: any*/),
                 "concreteType": "PullRequestReviewThreadConnection",
                 "kind": "LinkedField",
                 "name": "reviewThreads",
@@ -892,14 +1459,14 @@ return {
                     "plural": true,
                     "selections": [
                       (v11/*: any*/),
-                      (v36/*: any*/),
-                      (v37/*: any*/),
-                      (v38/*: any*/),
-                      (v39/*: any*/),
-                      (v40/*: any*/),
+                      (v49/*: any*/),
+                      (v50/*: any*/),
+                      (v51/*: any*/),
+                      (v52/*: any*/),
+                      (v53/*: any*/),
                       {
                         "alias": null,
-                        "args": (v31/*: any*/),
+                        "args": (v54/*: any*/),
                         "concreteType": "PullRequestReviewCommentConnection",
                         "kind": "LinkedField",
                         "name": "comments",
@@ -917,7 +1484,7 @@ return {
                               (v14/*: any*/),
                               (v15/*: any*/),
                               (v16/*: any*/),
-                              (v43/*: any*/)
+                              (v56/*: any*/)
                             ],
                             "storageKey": null
                           }
@@ -929,7 +1496,8 @@ return {
                   }
                 ],
                 "storageKey": "reviewThreads(first:80)"
-              }
+              },
+              (v59/*: any*/)
             ],
             "storageKey": null
           },
@@ -940,16 +1508,16 @@ return {
     ]
   },
   "params": {
-    "cacheID": "88a061dc131d21f1ff3840659f4efdb1",
+    "cacheID": "1bb2df3e66f4e1b05837f930e9f2e916",
     "id": null,
     "metadata": {},
     "name": "PullDetailPageQuery",
     "operationKind": "query",
-    "text": "query PullDetailPageQuery(\n  $owner: String!\n  $name: String!\n  $number: Int!\n) {\n  viewer {\n    login\n    id\n  }\n  repository(owner: $owner, name: $name) {\n    mergeCommitAllowed\n    squashMergeAllowed\n    rebaseMergeAllowed\n    viewerDefaultMergeMethod\n    pullRequest(number: $number) {\n      id\n      number\n      title\n      body\n      bodyHTML\n      state\n      isDraft\n      merged\n      mergeable\n      url\n      createdAt\n      author {\n        __typename\n        login\n        avatarUrl(size: 64)\n        ... on User {\n          name\n        }\n        ... on Node {\n          __isNode: __typename\n          id\n        }\n      }\n      baseRefName\n      headRefName\n      headRefOid\n      viewerLatestReview {\n        id\n        state\n        body\n        bodyHTML\n        viewerDidAuthor\n      }\n      pendingReviews: reviews(first: 10, states: [PENDING]) {\n        nodes {\n          id\n          state\n          body\n          bodyHTML\n          viewerDidAuthor\n          author {\n            __typename\n            login\n            ... on Node {\n              __isNode: __typename\n              id\n            }\n          }\n        }\n      }\n      reviews(first: 20) {\n        nodes {\n          id\n          state\n          author {\n            __typename\n            login\n            avatarUrl(size: 40)\n            ... on User {\n              name\n            }\n            ... on Node {\n              __isNode: __typename\n              id\n            }\n          }\n          body\n          bodyHTML\n          createdAt\n          viewerDidAuthor\n        }\n      }\n      comments(first: 40) {\n        nodes {\n          id\n          body\n          bodyHTML\n          createdAt\n          author {\n            __typename\n            login\n            avatarUrl(size: 40)\n            ... on User {\n              name\n            }\n            ... on Node {\n              __isNode: __typename\n              id\n            }\n          }\n        }\n      }\n      reviewThreads(first: 80) {\n        nodes {\n          id\n          path\n          line\n          startLine\n          diffSide\n          isResolved\n          comments(first: 20) {\n            nodes {\n              id\n              body\n              bodyHTML\n              state\n              author {\n                __typename\n                login\n                ... on Node {\n                  __isNode: __typename\n                  id\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n    id\n  }\n}\n"
+    "text": "query PullDetailPageQuery(\n  $owner: String!\n  $name: String!\n  $number: Int!\n) {\n  viewer {\n    login\n    id\n  }\n  repository(owner: $owner, name: $name) {\n    mergeCommitAllowed\n    squashMergeAllowed\n    rebaseMergeAllowed\n    viewerDefaultMergeMethod\n    pullRequest(number: $number) {\n      id\n      number\n      title\n      body\n      bodyHTML\n      state\n      isDraft\n      merged\n      mergeable\n      url\n      createdAt\n      ...ReactionBar_reactable\n      author {\n        __typename\n        login\n        avatarUrl(size: 64)\n        ... on User {\n          name\n        }\n        ... on Node {\n          __isNode: __typename\n          id\n        }\n      }\n      baseRefName\n      headRefName\n      headRefOid\n      reviewRequests(first: 40) {\n        nodes {\n          id\n          asCodeOwner\n          requestedReviewer {\n            __typename\n            ... on User {\n              id\n              login\n              userName: name\n              avatarUrl(size: 40)\n            }\n            ... on Team {\n              id\n              teamName: name\n              combinedSlug\n            }\n            ... on Bot {\n              id\n              login\n              avatarUrl(size: 40)\n            }\n            ... on Node {\n              __isNode: __typename\n              id\n            }\n          }\n        }\n      }\n      suggestedReviewers {\n        isAuthor\n        isCommenter\n        reviewer {\n          id\n          login\n          name\n          avatarUrl(size: 40)\n        }\n      }\n      viewerLatestReview {\n        id\n        state\n        body\n        bodyHTML\n        viewerDidAuthor\n      }\n      pendingReviews: reviews(first: 10, states: [PENDING]) {\n        nodes {\n          id\n          state\n          body\n          bodyHTML\n          viewerDidAuthor\n          author {\n            __typename\n            login\n            ... on Node {\n              __isNode: __typename\n              id\n            }\n          }\n        }\n      }\n      timelineItems(first: 100, itemTypes: [ISSUE_COMMENT, PULL_REQUEST_REVIEW, PULL_REQUEST_COMMIT, HEAD_REF_FORCE_PUSHED_EVENT]) {\n        nodes {\n          __typename\n          ... on IssueComment {\n            id\n            body\n            bodyHTML\n            createdAt\n            author {\n              __typename\n              login\n              avatarUrl(size: 40)\n              ... on User {\n                name\n              }\n              ... on Node {\n                __isNode: __typename\n                id\n              }\n            }\n            ...ReactionBar_reactable\n          }\n          ... on PullRequestReview {\n            id\n            state\n            body\n            bodyHTML\n            createdAt\n            viewerDidAuthor\n            author {\n              __typename\n              login\n              avatarUrl(size: 40)\n              ... on User {\n                name\n              }\n              ... on Node {\n                __isNode: __typename\n                id\n              }\n            }\n            ...ReactionBar_reactable\n          }\n          ... on PullRequestCommit {\n            id\n            url\n            commit {\n              oid\n              abbreviatedOid\n              messageHeadline\n              committedDate\n              url\n              author {\n                name\n                avatarUrl(size: 40)\n                user {\n                  login\n                  name\n                  avatarUrl(size: 40)\n                  id\n                }\n              }\n              id\n            }\n          }\n          ... on HeadRefForcePushedEvent {\n            id\n            createdAt\n            actor {\n              __typename\n              login\n              avatarUrl(size: 40)\n              ... on User {\n                name\n              }\n              ... on Node {\n                __isNode: __typename\n                id\n              }\n            }\n            beforeCommit {\n              abbreviatedOid\n              oid\n              id\n            }\n            afterCommit {\n              abbreviatedOid\n              oid\n              url\n              id\n            }\n          }\n          ... on Node {\n            __isNode: __typename\n            id\n          }\n        }\n      }\n      reviewThreads(first: 80) {\n        nodes {\n          id\n          path\n          line\n          startLine\n          diffSide\n          isResolved\n          comments(first: 20) {\n            nodes {\n              id\n              body\n              bodyHTML\n              state\n              author {\n                __typename\n                login\n                ... on Node {\n                  __isNode: __typename\n                  id\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n    id\n  }\n}\n\nfragment ReactionBar_reactable on Reactable {\n  __isReactable: __typename\n  id\n  viewerCanReact\n  reactionGroups {\n    content\n    viewerHasReacted\n    reactors(first: 1) {\n      totalCount\n    }\n  }\n}\n"
   }
 };
 })();
 
-(node as any).hash = "465b35baf8d93818d4042c78f7aed4a9";
+(node as any).hash = "29cb7f2e117604a0a6090549f774686e";
 
 export default node;

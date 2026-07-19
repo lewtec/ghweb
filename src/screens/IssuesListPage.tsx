@@ -2,6 +2,7 @@ import { graphql, useLazyLoadQuery } from 'react-relay';
 import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
 import { Link } from '@tanstack/react-router';
 import { AuthorByline } from '@/components/AuthorByline';
+import { CopyableNumber } from '@/components/CopyableNumber';
 import { IssueStateBadge } from '@/components/IssueStateBadge';
 import type { IssuesListPageQuery } from './__generated__/IssuesListPageQuery.graphql';
 
@@ -59,7 +60,10 @@ export function IssuesListPage({ owner, name }: Props) {
                   params={{ owner, name, number: String(issue.number) }}
                   className="link link-hover font-medium min-w-0 flex-1 pr-2"
                 >
-                  <span className="opacity-50 font-normal">#{issue.number}</span>{' '}
+                  <CopyableNumber
+                    number={issue.number}
+                    className="opacity-50 font-normal"
+                  />{' '}
                   {issue.title}
                 </Link>
                 <IssueStateBadge className="shrink-0" state={issue.state} />

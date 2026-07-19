@@ -2,6 +2,7 @@ import { graphql, useLazyLoadQuery } from 'react-relay';
 import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
 import { Link } from '@tanstack/react-router';
 import { AuthorByline } from '@/components/AuthorByline';
+import { CopyableNumber } from '@/components/CopyableNumber';
 import { PrStateBadge } from '@/components/PrStateBadge';
 import type { PullsListPageQuery } from './__generated__/PullsListPageQuery.graphql';
 
@@ -54,7 +55,10 @@ export function PullsListPage({ owner, name }: Props) {
                   params={{ owner, name, number: String(pr.number) }}
                   className="link link-hover font-medium min-w-0 flex-1 pr-2"
                 >
-                  <span className="opacity-50 font-normal">#{pr.number}</span>{' '}
+                  <CopyableNumber
+                    number={pr.number}
+                    className="opacity-50 font-normal"
+                  />{' '}
                   {pr.title}
                 </Link>
                 <PrStateBadge
