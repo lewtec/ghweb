@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { AuthorByline } from '@/components/AuthorByline';
 import { ExternalLink } from '@/components/ExternalLink';
@@ -21,22 +21,35 @@ export function ComparePage({ owner, name, base, head }: Props) {
   const [data, setData] = useState<RestCompareResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  /** Monotonic id so late REST responses from a prior range/retry are ignored. */
+  const fetchSeq = useRef(0);
 
-  const load = () => {
+  const load = useCallback(() => {
+    const seq = ++fetchSeq.current;
     setLoading(true);
     setError(null);
+    // Drop prior range while the new one loads (avoid flashing wrong compare).
+    setData(null);
     void fetchCompare(owner, name, base, head)
-      .then(setData)
-      .catch((e: unknown) =>
-        setError(e instanceof Error ? e.message : String(e)),
-      )
-      .finally(() => setLoading(false));
-  };
+      .then((result) => {
+        if (seq === fetchSeq.current) setData(result);
+      })
+      .catch((e: unknown) => {
+        if (seq === fetchSeq.current)
+          setError(e instanceof Error ? e.message : String(e));
+      })
+      .finally(() => {
+        if (seq === fetchSeq.current) setLoading(false);
+      });
+  }, [owner, name, base, head]);
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- reload when range changes
-  }, [owner, name, base, head]);
+    return () => {
+      // Invalidate in-flight work when range changes or the page unmounts.
+      fetchSeq.current += 1;
+    };
+  }, [load]);
 
   return (
     <div className="w-full min-w-0 p-[clamp(0.75rem,2vw,1.25rem)]">
