@@ -733,9 +733,11 @@ export function PullDetailPage({
                           type="button"
                           className="btn btn-sm btn-ghost justify-start gap-2"
                           disabled={reviewBusy}
+                          popoverTarget={actionsPopoverDomId}
+                          popoverTargetAction="hide"
                           onClick={() => {
-                            runReview(event, label);
                             closeActionsPopover();
+                            runReview(event, label);
                           }}
                         >
                           <Icon className="size-4 shrink-0" aria-hidden />
@@ -747,9 +749,11 @@ export function PullDetailPage({
                           type="button"
                           className="btn btn-sm btn-ghost text-error justify-start gap-2"
                           disabled={discardInFlight}
+                          popoverTarget={actionsPopoverDomId}
+                          popoverTargetAction="hide"
                           onClick={() => {
-                            runDiscardPending();
                             closeActionsPopover();
+                            runDiscardPending();
                           }}
                         >
                           <Trash2 className="size-4 shrink-0" aria-hidden />
@@ -790,6 +794,8 @@ export function PullDetailPage({
                                 pr.mergeable === 'CONFLICTING'
                               }
                               title={MERGE_HINT[m]}
+                              popoverTarget={actionsPopoverDomId}
+                              popoverTargetAction="hide"
                               onClick={() => {
                                 closeActionsPopover();
                                 setMerging(true);
@@ -846,6 +852,8 @@ export function PullDetailPage({
                       type="button"
                       className="btn btn-sm btn-ghost w-full justify-start gap-2"
                       disabled={closeInFlight}
+                      popoverTarget={actionsPopoverDomId}
+                      popoverTargetAction="hide"
                       onClick={() => {
                         closeActionsPopover();
                         commitClose({
