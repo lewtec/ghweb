@@ -1,6 +1,7 @@
 import { graphql, useLazyLoadQuery } from 'react-relay';
 import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
 import { Link } from '@tanstack/react-router';
+import { GitFork, Star } from 'lucide-react';
 import type { RepoPageQuery } from './__generated__/RepoPageQuery.graphql';
 import { ExternalLink } from '@/components/ExternalLink';
 import { GithubMarkdown } from '@/components/GithubMarkdown';
@@ -82,13 +83,29 @@ export function RepoPage({ owner, name }: Props) {
     <div className="w-full min-w-0 p-[clamp(0.75rem,2vw,1.25rem)]">
     <div className="mx-auto w-full max-w-4xl space-y-4">
       <div>
-        <h1 className="text-xl font-semibold">{repo.nameWithOwner}</h1>
+        <h1 className="text-xl font-semibold flex flex-wrap items-center gap-x-3 gap-y-1 min-w-0">
+          <span className="min-w-0 break-all">{repo.nameWithOwner}</span>
+          <span className="flex items-center gap-3 text-sm font-normal opacity-70 tabular-nums shrink-0">
+            <span
+              className="inline-flex items-center gap-1"
+              title={`${repo.stargazerCount.toLocaleString()} stars`}
+            >
+              <Star className="size-4 shrink-0" aria-hidden />
+              <span>{repo.stargazerCount.toLocaleString()}</span>
+            </span>
+            <span
+              className="inline-flex items-center gap-1"
+              title={`${repo.forkCount.toLocaleString()} forks`}
+            >
+              <GitFork className="size-4 shrink-0" aria-hidden />
+              <span>{repo.forkCount.toLocaleString()}</span>
+            </span>
+          </span>
+        </h1>
         {repo.description ? (
           <p className="opacity-80 text-sm mt-1">{repo.description}</p>
         ) : null}
         <div className="flex flex-wrap gap-2 mt-2 text-xs opacity-70">
-          <span>★ {repo.stargazerCount}</span>
-          <span>forks {repo.forkCount}</span>
           {repo.primaryLanguage ? (
             <span>{repo.primaryLanguage.name}</span>
           ) : null}
