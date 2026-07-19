@@ -53,7 +53,7 @@ export function TopBar({
       <div className="navbar min-h-12 gap-1 px-2 w-full min-w-0">
         <nav
           aria-label="Breadcrumb"
-          className="flex-none flex items-center gap-0.5 min-w-0 max-w-[min(100%,55%)]"
+          className="flex items-center gap-0.5 min-w-0 shrink"
         >
           <Link
             to="/"
@@ -71,7 +71,7 @@ export function TopBar({
               <Link
                 to="/$login"
                 params={{ login: repo.owner }}
-                className="btn btn-ghost btn-sm px-1.5 min-w-0 font-normal opacity-70 max-w-[8rem] truncate"
+                className="btn btn-ghost btn-sm px-1.5 min-w-0 font-normal opacity-70 max-w-[5rem] sm:max-w-[8rem] truncate"
                 title={repo.owner}
               >
                 {repo.owner}
@@ -83,56 +83,62 @@ export function TopBar({
               <Link
                 to="/$owner/$name"
                 params={{ owner: repo.owner, name: repo.name }}
-                className="btn btn-ghost btn-sm px-1.5 min-w-0 font-medium max-w-[10rem] truncate"
+                className="btn btn-ghost btn-sm px-1.5 min-w-0 font-medium max-w-[5.5rem] sm:max-w-[10rem] truncate"
                 title={repo.name}
               >
                 {repo.name}
               </Link>
-
-              <div
-                className="join ms-1 shrink-0"
-                role="navigation"
-                aria-label="Repository sections"
-              >
-                <SectionLink
-                  to="/$owner/$name"
-                  params={{ owner: repo.owner, name: repo.name }}
-                  exact
-                  active={section === 'code'}
-                  label="Code"
-                  icon={Code2}
-                />
-                <SectionLink
-                  to="/$owner/$name/issues"
-                  params={{ owner: repo.owner, name: repo.name }}
-                  active={section === 'issues'}
-                  label="Issues"
-                  icon={CircleDot}
-                />
-                <SectionLink
-                  to="/$owner/$name/pulls"
-                  params={{ owner: repo.owner, name: repo.name }}
-                  active={section === 'prs'}
-                  label="PRs"
-                  icon={GitPullRequest}
-                />
-                <SectionLink
-                  to="/$owner/$name/actions"
-                  params={{ owner: repo.owner, name: repo.name }}
-                  active={section === 'actions'}
-                  label="Actions"
-                  icon={Workflow}
-                />
-              </div>
             </>
           ) : null}
         </nav>
 
-        <div className="flex-1 flex justify-end md:justify-center px-1 min-w-0">
+        {repo ? (
+          <div
+            className="join shrink-0"
+            role="navigation"
+            aria-label="Repository sections"
+          >
+            <SectionLink
+              to="/$owner/$name"
+              params={{ owner: repo.owner, name: repo.name }}
+              exact
+              active={section === 'code'}
+              label="Code"
+              icon={Code2}
+            />
+            <SectionLink
+              to="/$owner/$name/issues"
+              params={{ owner: repo.owner, name: repo.name }}
+              active={section === 'issues'}
+              label="Issues"
+              icon={CircleDot}
+            />
+            <SectionLink
+              to="/$owner/$name/pulls"
+              params={{ owner: repo.owner, name: repo.name }}
+              active={section === 'prs'}
+              label="PRs"
+              icon={GitPullRequest}
+            />
+            <SectionLink
+              to="/$owner/$name/actions"
+              params={{ owner: repo.owner, name: repo.name }}
+              active={section === 'actions'}
+              label="Actions"
+              icon={Workflow}
+            />
+          </div>
+        ) : null}
+
+        {/*
+          flex-1 spacer must not steal taps from section icons that sit
+          beside it on narrow screens (empty flex area covered the join).
+        */}
+        <div className="flex-1 flex justify-end md:justify-center px-1 min-w-0 pointer-events-none">
           {/* Narrow: icon-only; md+: full Jump… bar with ⌘K */}
           <button
             type="button"
-            className="btn btn-ghost btn-sm btn-square md:hidden"
+            className="btn btn-ghost btn-sm btn-square md:hidden pointer-events-auto"
             onClick={onOpenPalette}
             aria-label="Open command palette (⌘K)"
             title="Jump… (⌘K)"
@@ -142,7 +148,7 @@ export function TopBar({
           <button
             type="button"
             className={cn(
-              'btn btn-sm btn-ghost border border-base-300 bg-base-100',
+              'btn btn-sm btn-ghost border border-base-300 bg-base-100 pointer-events-auto',
               'hidden md:inline-flex w-full max-w-md justify-start gap-2 font-normal text-base-content/60',
             )}
             onClick={onOpenPalette}
@@ -154,7 +160,7 @@ export function TopBar({
           </button>
         </div>
 
-        <div className="flex-none flex items-center gap-1">
+        <div className="flex-none flex items-center gap-1 shrink-0">
           {rl?.remaining != null && rl.remaining < 500 ? (
             <div
               className="badge badge-warning badge-sm hidden md:inline-flex"
