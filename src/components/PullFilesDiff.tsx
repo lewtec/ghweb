@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type KeyboardEvent,
   type MouseEvent,
@@ -540,6 +541,8 @@ export function PullFilesDiff({
     Record<string, boolean>
   >({});
   const [viewedBusyPath, setViewedBusyPath] = useState<string | null>(null);
+  /** Monotonic id so late REST responses from a prior PR/retry are ignored. */
+  const fetchSeq = useRef(0);
 
   const viewedData = useLazyLoadQuery<PullFilesDiffViewedQuery>(
     viewedQuery,
@@ -615,11 +618,13 @@ export function PullFilesDiff({
   );
 
   const load = useCallback(() => {
+    const seq = ++fetchSeq.current;
     setError(null);
     setLoading(true);
-    // Keep previous file list painted while refreshing (no blank flash)
+    // Keep previous file list painted while refreshing the same PR (no blank flash)
     void fetchPullFiles(owner, name, number)
       .then((f) => {
+        if (seq !== fetchSeq.current) return;
         setFiles(f);
         setOpenPath((prev) =>
           prev && f.some((x) => x.filename === prev)
@@ -628,13 +633,26 @@ export function PullFilesDiff({
         );
       })
       .catch((e: unknown) => {
+        if (seq !== fetchSeq.current) return;
         setError(e instanceof Error ? e.message : String(e));
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (seq === fetchSeq.current) setLoading(false);
+      });
   }, [owner, name, number]);
 
   useEffect(() => {
+    // Drop prior PR's files / expand state when identity changes (avoid wrong diffs).
+    setFiles(null);
+    setOpenPath(null);
+    setExpandOverride({});
+    setViewedOverride({});
+    setViewedBusyPath(null);
     load();
+    return () => {
+      // Invalidate in-flight work when PR changes or the panel unmounts.
+      fetchSeq.current += 1;
+    };
   }, [load]);
 
   if (error && !files) {
