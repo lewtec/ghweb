@@ -37,8 +37,27 @@ describe('expandSlash', () => {
   it('expands /pr to /prs ', () => {
     expect(expandSlash('/pr')).toBe('/prs ');
   });
+  it('expands /act to /actions ', () => {
+    expect(expandSlash('/act')).toBe('/actions ');
+  });
+  it('expands /ci to /actions ', () => {
+    expect(expandSlash('/ci')).toBe('/actions ');
+  });
+  it('expands /comm to /commits ', () => {
+    expect(expandSlash('/comm')).toBe('/commits ');
+  });
+  it('expands /sw to /switch ', () => {
+    expect(expandSlash('/sw')).toBe('/switch ');
+  });
+  it('expands /code to /code ', () => {
+    expect(expandSlash('/code')).toBe('/code ');
+  });
   it('does not treat /src as slash command', () => {
     expect(expandSlash('/src')).toBeNull();
+  });
+  it('stays null when several cmds share a prefix', () => {
+    // /c matches code, commits, ci→actions — ambiguous
+    expect(expandSlash('/c')).toBeNull();
   });
 });
 

@@ -63,14 +63,9 @@ export function expandSlash(query: string): string | null {
   }
   if (matched.size !== 1) return null;
 
+  // Canonical tokens match SlashCommand['cmd'] (prs not pulls, etc.).
+  // A partial map used to default everything else to `code`, so Tab on
+  // /act, /comm, /sw completed as /code instead of actions/commits/switch.
   const cmd = [...matched][0]!;
-  const token =
-    cmd === 'prs'
-      ? 'prs'
-      : cmd === 'issues'
-        ? 'issues'
-        : cmd === 'search'
-          ? 'search'
-          : 'code';
-  return `/${token} `;
+  return `/${cmd} `;
 }
