@@ -54,7 +54,46 @@ export type RepoDirEntry = {
   type: 'file' | 'dir';
 };
 
-const dirCache = new Map<string, RepoDirEntry[] | null>();
+/** Positive listings stay warm for path-suggest; misses expire faster. */
+const DIR_CACHE_TTL_MS = 30_000;
+const DIR_CACHE_NULL_TTL_MS = 5_000;
+
+type DirCacheEntry = {
+  at: number;
+  value: RepoDirEntry[] | null;
+};
+
+const dirCache = new Map<string, DirCacheEntry>();
+
+function dirCacheKey(
+  owner: string,
+  repo: string,
+  ref: string,
+  dirPath: string,
+): string {
+  // Include API root so multi-host accounts cannot share listings.
+  return `${apiRoot()}|${owner}/${repo}@${ref}:${dirPath || '/'}`;
+}
+
+function dirCacheGet(key: string): RepoDirEntry[] | null | undefined {
+  const hit = dirCache.get(key);
+  if (!hit) return undefined;
+  const ttl = hit.value === null ? DIR_CACHE_NULL_TTL_MS : DIR_CACHE_TTL_MS;
+  if (Date.now() - hit.at > ttl) {
+    dirCache.delete(key);
+    return undefined;
+  }
+  return hit.value;
+}
+
+function dirCacheSet(key: string, value: RepoDirEntry[] | null): void {
+  dirCache.set(key, { at: Date.now(), value });
+}
+
+/** Drop cached directory listings (tests / forced refresh). */
+export function clearRepoDirCache(): void {
+  dirCache.clear();
+}
 
 function contentsHeaders(): HeadersInit {
   const token = getToken();
@@ -83,7 +122,9 @@ function contentsUrl(
 }
 
 /**
- * List a directory (or null if missing / not a dir). Cached per owner/repo@ref:path.
+ * List a directory (or null if missing / not a dir).
+ * Cached per API root + owner/repo@ref:path with a short TTL so ⌘K path
+ * suggest does not serve process-lifetime stale listings after tree changes.
  */
 export async function listRepoDir(
   owner: string,
@@ -91,14 +132,15 @@ export async function listRepoDir(
   ref: string,
   dirPath: string,
 ): Promise<RepoDirEntry[] | null> {
-  const key = `${owner}/${repo}@${ref}:${dirPath || '/'}`;
-  if (dirCache.has(key)) return dirCache.get(key) ?? null;
+  const key = dirCacheKey(owner, repo, ref, dirPath);
+  const cached = dirCacheGet(key);
+  if (cached !== undefined) return cached;
 
   const res = await fetch(contentsUrl(owner, repo, ref, dirPath), {
     headers: contentsHeaders(),
   });
   if (res.status === 404) {
-    dirCache.set(key, null);
+    dirCacheSet(key, null);
     return null;
   }
   if (!res.ok) {
@@ -108,7 +150,7 @@ export async function listRepoDir(
   const data: unknown = await res.json();
   if (!Array.isArray(data)) {
     // path is a file, not a directory
-    dirCache.set(key, null);
+    dirCacheSet(key, null);
     return null;
   }
   const entries: RepoDirEntry[] = data
@@ -128,7 +170,7 @@ export async function listRepoDir(
     if (a.type !== b.type) return a.type === 'dir' ? -1 : 1;
     return a.name.localeCompare(b.name);
   });
-  dirCache.set(key, entries);
+  dirCacheSet(key, entries);
   return entries;
 }
 
