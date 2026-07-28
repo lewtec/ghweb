@@ -1,6 +1,7 @@
 import {
   isPathExpression,
   locationDir,
+  pureUps,
   relativeToLocation,
   resolveFromCodeLocation,
   stripSlashes,
@@ -143,7 +144,7 @@ export function completionContext(
   const q = query.trim();
   const loc = { mode: anchor.mode, path: anchor.path };
 
-  const ups = countUps(q);
+  const ups = pureUps(q);
   if (ups != null && ups > 0) {
     const abs = resolveFromCodeLocation(loc, q.replace(/\/+$/, '') || '..') ?? '';
     // List the directory we land on (parent), so children appear after ../
@@ -180,13 +181,4 @@ export function completionContext(
     parentExpr === '' ? '.' : parentExpr.endsWith('/') ? parentExpr : parentExpr;
   const listDir = resolveFromCodeLocation(loc, parentQuery) ?? '';
   return { listDir, prefix, climbDest: null };
-}
-
-/** Number of leading `..` segments if query is only climbs (optional trailing /). */
-function countUps(q: string): number | null {
-  const t = q.trim().replace(/\/+$/, '');
-  if (!t) return null;
-  const parts = t.split('/');
-  if (parts.length === 0 || !parts.every((p) => p === '..')) return null;
-  return parts.length;
 }

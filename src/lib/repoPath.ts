@@ -56,8 +56,11 @@ export function resolveRepoPath(
   return stack.join('/');
 }
 
-/** Pure climb expression (`..`, `../..`, …) → number of ups, else null. */
-function pureUps(expression: string): number | null {
+/**
+ * Pure climb expression (`..`, `../..`, …) → number of ups, else null.
+ * Trailing slashes ignored. Used by path resolve and cmdk completion.
+ */
+export function pureUps(expression: string): number | null {
   const t = expression.trim().replace(/\/+$/, '');
   if (!t || t === '.') return null;
   const parts = t.split('/');
