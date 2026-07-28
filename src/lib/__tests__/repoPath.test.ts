@@ -4,10 +4,27 @@ import {
   cwdFromCodeLocation,
   gitObjectExpression,
   isPathExpression,
+  pureUps,
   relativeToLocation,
   resolveFromCodeLocation,
   resolveRepoPath,
 } from '../repoPath';
+
+describe('pureUps', () => {
+  it('counts pure climb segments', () => {
+    expect(pureUps('..')).toBe(1);
+    expect(pureUps('../')).toBe(1);
+    expect(pureUps('../..')).toBe(2);
+    expect(pureUps('../../')).toBe(2);
+  });
+
+  it('rejects non-pure climbs', () => {
+    expect(pureUps('')).toBeNull();
+    expect(pureUps('.')).toBeNull();
+    expect(pureUps('../x')).toBeNull();
+    expect(pureUps('src')).toBeNull();
+  });
+});
 
 describe('resolveRepoPath', () => {
   it('resolves relative with ..', () => {
