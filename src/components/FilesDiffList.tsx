@@ -3,7 +3,7 @@
  * the same patch pipeline as PR files). No review widgets / viewed state.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { DiffFile, DiffView, DiffModeEnum } from '@git-diff-view/react';
+import { DiffView, DiffModeEnum } from '@git-diff-view/react';
 import '@git-diff-view/react/styles/diff-view-pure.css';
 import { Link } from '@tanstack/react-router';
 import { ExternalLink as ExternalLinkIcon } from 'lucide-react';
@@ -14,9 +14,10 @@ import {
   type ResolvedTheme,
 } from '@/lib/theme';
 import { ExternalLink } from '@/components/ExternalLink';
+import { DiffParseError } from '@/components/DiffParseError';
 import { cn } from '@/lib/cls';
 import { normalizeGithubPatch, patchFileNames } from '@/lib/githubPatch';
-import { langFromPath } from '@/lib/diffLang';
+import { buildDiffFile } from '@/lib/buildDiffFile';
 import { githubBlobUrl } from '@/lib/permalinks';
 
 type Props = {
@@ -45,41 +46,13 @@ function SafeDiffView({
   const [theme, setTheme] = useState<ResolvedTheme>(() => getResolvedTheme());
   useEffect(() => subscribeTheme(setTheme), []);
 
-  const { diffFile, parseError } = useMemo(() => {
-    try {
-      const lang = langFromPath(newName || oldName || path);
-      const file = new DiffFile(oldName, '', newName, '', hunks, lang, lang);
-      file.initTheme(theme);
-      file.init();
-      file.buildSplitDiffLines();
-      file.buildUnifiedDiffLines();
-      if (file.unifiedLineLength === 0 && file.splitLineLength === 0) {
-        return {
-          diffFile: null as DiffFile | null,
-          parseError: 'Parsed diff is empty' as string | null,
-        };
-      }
-      return { diffFile: file, parseError: null as string | null };
-    } catch (e) {
-      return {
-        diffFile: null as DiffFile | null,
-        parseError: e instanceof Error ? e.message : String(e),
-      };
-    }
-  }, [hunks, oldName, newName, path, theme]);
+  const { diffFile, parseError } = useMemo(
+    () => buildDiffFile({ hunks, oldName, newName, path, theme }),
+    [hunks, oldName, newName, path, theme],
+  );
 
   if (parseError || !diffFile) {
-    return (
-      <div className="p-3 space-y-2">
-        <div className="alert alert-warning text-sm">
-          Diff viewer could not parse this patch
-          {parseError ? ` (${parseError})` : ''}. Raw patch below.
-        </div>
-        <pre className="text-xs overflow-auto max-h-[min(40vh,24rem)] bg-base-200 p-2 rounded-box whitespace-pre-wrap">
-          {hunks.join('')}
-        </pre>
-      </div>
-    );
+    return <DiffParseError hunks={hunks} parseError={parseError} />;
   }
 
   return (

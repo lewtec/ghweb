@@ -7,13 +7,14 @@ import {
   type KeyboardEvent,
   type MouseEvent,
 } from 'react';
-import { DiffFile, DiffView, DiffModeEnum, SplitSide } from '@git-diff-view/react';
+import { DiffView, DiffModeEnum, SplitSide } from '@git-diff-view/react';
 import '@git-diff-view/react/styles/diff-view-pure.css';
 import { graphql, useLazyLoadQuery, useMutation } from 'react-relay';
 import { Link } from '@tanstack/react-router';
 import { fetchPullFiles, type RestPullFile } from '@/lib/rest';
 import { LoadingBlock } from '@/components/LoadingBlock';
 import { ErrorBanner } from '@/components/ErrorBanner';
+import { DiffParseError } from '@/components/DiffParseError';
 import {
   getResolvedTheme,
   subscribeTheme,
@@ -28,7 +29,7 @@ import type { PullFilesDiffUnmarkViewedMutation } from './__generated__/PullFile
 import { cn } from '@/lib/cls';
 import { GithubMarkdown } from '@/components/GithubMarkdown';
 import { normalizeGithubPatch, patchFileNames } from '@/lib/githubPatch';
-import { langFromPath } from '@/lib/diffLang';
+import { buildDiffFile } from '@/lib/buildDiffFile';
 import { getWebOrigin } from '@/lib/auth';
 import { githubBlobUrl } from '@/lib/permalinks';
 import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
@@ -248,51 +249,13 @@ function SafeDiffView({
   const [theme, setTheme] = useState<ResolvedTheme>(() => getResolvedTheme());
   useEffect(() => subscribeTheme(setTheme), []);
 
-  const { diffFile, parseError } = useMemo(() => {
-    try {
-      // Prefer new path for renames; map extension → hljs id (rs→rust, etc.)
-      const lang = langFromPath(newName || oldName || path);
-      const file = new DiffFile(
-        oldName,
-        '',
-        newName,
-        '',
-        hunks,
-        lang,
-        lang,
-      );
-      file.initTheme(theme);
-      // init() = initRaw (compose content from hunks) + initSyntax (lowlight, all langs)
-      file.init();
-      file.buildSplitDiffLines();
-      file.buildUnifiedDiffLines();
-      if (file.unifiedLineLength === 0 && file.splitLineLength === 0) {
-        return {
-          diffFile: null as DiffFile | null,
-          parseError: 'Parsed diff is empty' as string | null,
-        };
-      }
-      return { diffFile: file, parseError: null as string | null };
-    } catch (e) {
-      return {
-        diffFile: null as DiffFile | null,
-        parseError: e instanceof Error ? e.message : String(e),
-      };
-    }
-  }, [hunks, oldName, newName, path, theme]);
+  const { diffFile, parseError } = useMemo(
+    () => buildDiffFile({ hunks, oldName, newName, path, theme }),
+    [hunks, oldName, newName, path, theme],
+  );
 
   if (parseError || !diffFile) {
-    return (
-      <div className="p-3 space-y-2">
-        <div className="alert alert-warning text-sm">
-          Diff viewer could not parse this patch
-          {parseError ? ` (${parseError})` : ''}. Raw patch below.
-        </div>
-        <pre className="text-xs overflow-auto max-h-[min(40vh,24rem)] bg-base-200 p-2 rounded-box whitespace-pre-wrap">
-          {hunks.join('')}
-        </pre>
-      </div>
-    );
+    return <DiffParseError hunks={hunks} parseError={parseError} />;
   }
 
   return (
