@@ -6,19 +6,28 @@ export function stripSlashes(p: string): string {
   return p.replace(/^\/+|\/+$/g, '');
 }
 
-export function cwdFromCodeLocation(loc: {
-  mode: 'blob' | 'tree';
-  path: string;
-}): string {
-  if (loc.mode === 'tree') return stripSlashes(loc.path);
-  return dirnameRepo(loc.path);
-}
-
 function dirnameRepo(path: string): string {
   const p = stripSlashes(path);
   if (!p) return '';
   const i = p.lastIndexOf('/');
   return i === -1 ? '' : p.slice(0, i);
+}
+
+/** Directory the user is "in" (blob → file's folder; tree → path). */
+export function locationDir(loc: {
+  mode: 'blob' | 'tree';
+  path: string;
+}): string {
+  const cur = stripSlashes(loc.path);
+  return loc.mode === 'blob' ? dirnameRepo(cur) : cur;
+}
+
+/** Same as `locationDir` — kept for goto context call sites. */
+export function cwdFromCodeLocation(loc: {
+  mode: 'blob' | 'tree';
+  path: string;
+}): string {
+  return locationDir(loc);
 }
 
 /**
@@ -66,15 +75,6 @@ export function pureUps(expression: string): number | null {
   const parts = t.split('/');
   if (parts.length === 0 || !parts.every((p) => p === '..')) return null;
   return parts.length;
-}
-
-/** Directory the user is "in" (blob → file's folder; tree → path). */
-export function locationDir(loc: {
-  mode: 'blob' | 'tree';
-  path: string;
-}): string {
-  const cur = stripSlashes(loc.path);
-  return loc.mode === 'blob' ? dirnameRepo(cur) : cur;
 }
 
 /**

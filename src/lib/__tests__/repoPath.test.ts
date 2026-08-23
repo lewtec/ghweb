@@ -4,6 +4,7 @@ import {
   cwdFromCodeLocation,
   gitObjectExpression,
   isPathExpression,
+  locationDir,
   pureUps,
   relativeToLocation,
   resolveFromCodeLocation,
@@ -51,6 +52,17 @@ describe('cwdFromCodeLocation', () => {
   });
   it('tree uses path', () => {
     expect(cwdFromCodeLocation({ mode: 'tree', path: 'src' })).toBe('src');
+  });
+  it('matches locationDir', () => {
+    const cases = [
+      { mode: 'blob' as const, path: 'src/lib/foo.ts' },
+      { mode: 'tree' as const, path: 'src/lib' },
+      { mode: 'blob' as const, path: 'DESIGN.md' },
+      { mode: 'tree' as const, path: '' },
+    ];
+    for (const loc of cases) {
+      expect(cwdFromCodeLocation(loc)).toBe(locationDir(loc));
+    }
   });
 });
 
