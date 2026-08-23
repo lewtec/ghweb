@@ -435,6 +435,18 @@ type App implements Node {
   url: URI!
 }
 
+input ApplyPendingIssueSuggestionsInput {
+  clientMutationId: String
+  issueId: ID!
+  actorId: ID!
+  suggestions: [PendingIssueSuggestionRef!]!
+}
+
+type ApplyPendingIssueSuggestionsPayload {
+  clientMutationId: String
+  issue: Issue
+}
+
 input ApproveDeploymentsInput {
   clientMutationId: String
   workflowRunId: ID!
@@ -501,6 +513,7 @@ type AssignedEvent implements Node {
   assignee: Assignee
   createdAt: DateTime!
   id: ID!
+  intent: IssueUpdateIntent
   user: User @deprecated(reason: "Assignees can now be mannequins. Use the `assignee` field instead. Removal on 2020-01-01 UTC.")
 }
 
@@ -1248,6 +1261,7 @@ type ClosedEvent implements Node & UniformResourceLocatable {
   createdAt: DateTime!
   duplicateOf: IssueOrPullRequest
   id: ID!
+  intent: IssueUpdateIntent
   resourcePath: URI!
   stateReason: IssueStateReason
   url: URI!
@@ -1753,6 +1767,7 @@ input CopilotCodeReviewParametersInput {
 
 type CopilotEndpoints {
   api: String!
+  exp: String
   originTracker: String!
   proxy: String!
   telemetry: String!
@@ -2078,6 +2093,7 @@ input CreateProjectV2FieldInput {
   dataType: ProjectV2CustomFieldType!
   name: String!
   singleSelectOptions: [ProjectV2SingleSelectFieldOptionInput!]
+  multiSelectOptions: [ProjectV2MultiSelectFieldOptionInput!]
   iterationConfiguration: ProjectV2IterationFieldConfigurationInput
 }
 
@@ -2122,6 +2138,19 @@ input CreateProjectV2StatusUpdateInput {
 type CreateProjectV2StatusUpdatePayload {
   clientMutationId: String
   statusUpdate: ProjectV2StatusUpdate
+}
+
+input CreateProjectV2ViewInput {
+  clientMutationId: String
+  projectId: ID!
+  name: String!
+  layout: ProjectV2ViewLayout!
+  configuration: ProjectV2ViewConfigurationInput
+}
+
+type CreateProjectV2ViewPayload {
+  clientMutationId: String
+  projectV2View: ProjectV2View
 }
 
 input CreatePullRequestInput {
@@ -2671,6 +2700,16 @@ type DeleteProjectV2StatusUpdatePayload {
   clientMutationId: String
   deletedStatusUpdateId: ID
   projectV2: ProjectV2
+}
+
+input DeleteProjectV2ViewInput {
+  clientMutationId: String
+  viewId: ID!
+}
+
+type DeleteProjectV2ViewPayload {
+  clientMutationId: String
+  projectV2View: ProjectV2View
 }
 
 input DeleteProjectV2WorkflowInput {
@@ -3408,6 +3447,7 @@ type Enterprise implements Node {
   enterpriseTeam(slug: String!): EnterpriseTeam
   enterpriseTeams(query: String, orderBy: EnterpriseTeamOrder = { field: ID, direction: ASC }, after: String, before: String, first: Int, last: Int): EnterpriseTeamConnection!
   id: ID!
+  innersourceVulnerabilities(orderBy: SecurityVulnerabilityOrder = { field: UPDATED_AT, direction: DESC }, ecosystem: SecurityAdvisoryEcosystem, package: String, severities: [SecurityAdvisorySeverity!], after: String, before: String, first: Int, last: Int): SecurityVulnerabilityConnection!
   location: String
   members(organizationLogins: [String!], query: String, orderBy: EnterpriseMemberOrder = { field: LOGIN, direction: ASC }, role: EnterpriseUserAccountMembershipRole, deployment: EnterpriseUserDeployment, hasTwoFactorEnabled: Boolean = null, twoFactorMethodSecurity: TwoFactorCredentialSecurityType = null, after: String, before: String, first: Int, last: Int): EnterpriseMemberConnection!
   name: String!
@@ -4573,13 +4613,14 @@ type Issue implements Assignable & Closable & Comment & Deletable & Labelable & 
   bodyUrl: URI!
   closed: Boolean!
   closedAt: DateTime
-  closedByPullRequestsReferences(includeClosedPrs: Boolean = false, orderByState: Boolean = false, userLinkedOnly: Boolean = false, after: String, before: String, first: Int, last: Int): PullRequestConnection
+  closedByPullRequestsReferences(includeClosedPrs: Boolean = false, orderByState: Boolean = false, userLinkedOnly: Boolean = false, excludeUserLinked: Boolean = false, after: String, before: String, first: Int, last: Int): PullRequestConnection
   comments(orderBy: IssueCommentOrder, after: String, before: String, first: Int, last: Int): IssueCommentConnection!
   createdAt: DateTime!
   createdViaEmail: Boolean!
   databaseId: Int
   duplicateOf: Issue
   editor: Actor
+  eventRationales: [IssueEventRationale!]! @deprecated(reason: "Use the `intent` field on individual timeline events instead. This field is being removed and now always returns an empty list.")
   fullDatabaseId: BigInt
   hovercard(includeNotificationContexts: Boolean = true): Hovercard!
   id: ID!
@@ -4597,6 +4638,7 @@ type Issue implements Assignable & Closable & Comment & Deletable & Labelable & 
   number: Int!
   parent: Issue
   participants(after: String, before: String, first: Int, last: Int): UserConnection!
+  pendingSuggestions: [PendingIssueSuggestion!]
   pinnedIssueComment: PinnedIssueComment
   projectCards(after: String, before: String, first: Int, last: Int, archivedStates: [ProjectCardArchivedState] = [ARCHIVED, NOT_ARCHIVED]): ProjectCardConnection! @deprecated(reason: "Projects (classic) is being deprecated in favor of the new Projects experience, see: https://github.blog/changelog/2024-05-23-sunset-notice-projects-classic/. Removal on 2025-04-01 UTC.")
   projectItems(includeArchived: Boolean = true, after: String, before: String, first: Int, last: Int): ProjectV2ItemConnection
@@ -4767,13 +4809,24 @@ enum IssueEventConfidenceLevel {
   HIGH
 }
 
+type IssueEventRationale {
+  actor: Actor
+  createdAt: DateTime!
+  issueEvent: IssueEventWithRationale
+  rationale: String!
+}
+
+union IssueEventWithRationale = ClosedEvent | IssueFieldAddedEvent | IssueFieldChangedEvent | IssueFieldRemovedEvent | IssueTypeAddedEvent | IssueTypeChangedEvent | IssueTypeRemovedEvent | LabeledEvent | UnlabeledEvent
+
 type IssueFieldAddedEvent implements Node {
   actor: Actor
   color: String
   createdAt: DateTime!
   id: ID!
+  intent: IssueUpdateIntent
   issueField: IssueFields
   options: [IssueFieldTimelineOption!]
+  rationale: IssueEventRationale @deprecated(reason: "Use `intent` instead. This field is being removed and now always returns null.")
   value: String
 }
 
@@ -4781,6 +4834,7 @@ type IssueFieldChangedEvent implements Node {
   actor: Actor
   createdAt: DateTime!
   id: ID!
+  intent: IssueUpdateIntent
   issueField: IssueFields
   newColor: String
   newOptions: [IssueFieldTimelineOption!]
@@ -4788,6 +4842,7 @@ type IssueFieldChangedEvent implements Node {
   previousColor: String
   previousOptions: [IssueFieldTimelineOption!]
   previousValue: String
+  rationale: IssueEventRationale @deprecated(reason: "Use `intent` instead. This field is being removed and now always returns null.")
 }
 
 interface IssueFieldCommon {
@@ -4884,8 +4939,10 @@ type IssueFieldRemovedEvent implements Node {
   actor: Actor
   createdAt: DateTime!
   id: ID!
+  intent: IssueUpdateIntent
   issueField: IssueFields
   options: [IssueFieldTimelineOption!]
+  rationale: IssueEventRationale @deprecated(reason: "Use `intent` instead. This field is being removed and now always returns null.")
 }
 
 type IssueFieldSingleSelect implements IssueFieldCommon & Node {
@@ -4958,6 +5015,19 @@ type IssueFieldTimelineOption {
   name: String!
 }
 
+input IssueFieldUpdateInput {
+  fieldName: String!
+  operation: IssueFieldUpdateOperation!
+  value: String
+}
+
+enum IssueFieldUpdateOperation {
+  SET
+  ADD
+  REMOVE
+  CLEAR
+}
+
 union IssueFieldValue = IssueFieldDateValue | IssueFieldMultiSelectValue | IssueFieldNumberValue | IssueFieldSingleSelectValue | IssueFieldTextValue
 
 interface IssueFieldValueCommon {
@@ -4974,6 +5044,18 @@ type IssueFieldValueConnection {
 type IssueFieldValueEdge {
   cursor: String!
   node: IssueFieldValue
+}
+
+input IssueFieldValueFilter {
+  fieldId: ID
+  fieldName: String
+  textValue: String
+  dateValue: String
+  numberValue: Float
+  singleSelectOptionId: ID
+  singleSelectOptionValue: String
+  multiSelectOptionIds: [ID!]
+  multiSelectOptionValues: [String!]
 }
 
 enum IssueFieldVisibility {
@@ -5005,6 +5087,7 @@ input IssueFilters {
   since: DateTime
   states: [IssueState!]
   type: String
+  issueFieldValues: [IssueFieldValueFilter!]
   viewerSubscribed: Boolean = false
 }
 
@@ -5037,6 +5120,15 @@ enum IssueStateReason {
   NOT_PLANNED
   COMPLETED
   DUPLICATE
+}
+
+input IssueStateUpdateInput {
+  value: IssueState!
+  stateReason: IssueClosedStateReason
+  duplicateIssueId: ID
+  rationale: String
+  suggest: Boolean
+  confidence: IssueEventConfidenceLevel
 }
 
 type IssueTemplate {
@@ -5150,15 +5242,19 @@ type IssueTypeAddedEvent implements Node {
   actor: Actor
   createdAt: DateTime!
   id: ID!
+  intent: IssueUpdateIntent
   issueType: IssueType
+  rationale: IssueEventRationale @deprecated(reason: "Use `intent` instead. This field is being removed and now always returns null.")
 }
 
 type IssueTypeChangedEvent implements Node {
   actor: Actor
   createdAt: DateTime!
   id: ID!
+  intent: IssueUpdateIntent
   issueType: IssueType
   prevIssueType: IssueType
+  rationale: IssueEventRationale @deprecated(reason: "Use `intent` instead. This field is being removed and now always returns null.")
 }
 
 enum IssueTypeColor {
@@ -5198,7 +5294,9 @@ type IssueTypeRemovedEvent implements Node {
   actor: Actor
   createdAt: DateTime!
   id: ID!
+  intent: IssueUpdateIntent
   issueType: IssueType
+  rationale: IssueEventRationale @deprecated(reason: "Use `intent` instead. This field is being removed and now always returns null.")
 }
 
 input IssueTypeUpdateInput {
@@ -5206,6 +5304,13 @@ input IssueTypeUpdateInput {
   suggest: Boolean
   confidence: IssueEventConfidenceLevel
   issueTypeId: ID
+}
+
+type IssueUpdateIntent {
+  confidence: IssueEventConfidenceLevel
+  databaseId: Int
+  intentId: String
+  rationale: String
 }
 
 type JoinedGitHubContribution implements Contribution {
@@ -5270,8 +5375,10 @@ type LabeledEvent implements Node {
   actor: Actor
   createdAt: DateTime!
   id: ID!
+  intent: IssueUpdateIntent
   label: Label!
   labelable: Labelable!
+  rationale: IssueEventRationale @deprecated(reason: "Use `intent` instead. This field is being removed and now always returns null.")
 }
 
 type Language implements Node {
@@ -5881,6 +5988,7 @@ enum MigrationSourceType {
   AZURE_DEVOPS
   BITBUCKET_SERVER
   GITHUB_ARCHIVE
+  GITLAB
 }
 
 enum MigrationState {
@@ -6038,6 +6146,7 @@ type Mutation {
   addSubIssue(input: AddSubIssueInput!): AddSubIssuePayload
   addUpvote(input: AddUpvoteInput!): AddUpvotePayload
   addVerifiableDomain(input: AddVerifiableDomainInput!): AddVerifiableDomainPayload
+  applyPendingIssueSuggestions(input: ApplyPendingIssueSuggestionsInput!): ApplyPendingIssueSuggestionsPayload
   approveDeployments(input: ApproveDeploymentsInput!): ApproveDeploymentsPayload
   approveVerifiableDomain(input: ApproveVerifiableDomainInput!): ApproveVerifiableDomainPayload
   archiveProjectV2Item(input: ArchiveProjectV2ItemInput!): ArchiveProjectV2ItemPayload
@@ -6081,6 +6190,7 @@ type Mutation {
   createProjectV2Field(input: CreateProjectV2FieldInput!): CreateProjectV2FieldPayload
   createProjectV2IssueField(input: CreateProjectV2IssueFieldInput!): CreateProjectV2IssueFieldPayload
   createProjectV2StatusUpdate(input: CreateProjectV2StatusUpdateInput!): CreateProjectV2StatusUpdatePayload
+  createProjectV2View(input: CreateProjectV2ViewInput!): CreateProjectV2ViewPayload
   createPullRequest(input: CreatePullRequestInput!): CreatePullRequestPayload
   createRef(input: CreateRefInput!): CreateRefPayload
   createRepository(input: CreateRepositoryInput!): CreateRepositoryPayload
@@ -6113,6 +6223,7 @@ type Mutation {
   deleteProjectV2Field(input: DeleteProjectV2FieldInput!): DeleteProjectV2FieldPayload
   deleteProjectV2Item(input: DeleteProjectV2ItemInput!): DeleteProjectV2ItemPayload
   deleteProjectV2StatusUpdate(input: DeleteProjectV2StatusUpdateInput!): DeleteProjectV2StatusUpdatePayload
+  deleteProjectV2View(input: DeleteProjectV2ViewInput!): DeleteProjectV2ViewPayload
   deleteProjectV2Workflow(input: DeleteProjectV2WorkflowInput!): DeleteProjectV2WorkflowPayload
   deletePullRequestReview(input: DeletePullRequestReviewInput!): DeletePullRequestReviewPayload
   deletePullRequestReviewComment(input: DeletePullRequestReviewCommentInput!): DeletePullRequestReviewCommentPayload
@@ -6155,6 +6266,7 @@ type Mutation {
   regenerateEnterpriseIdentityProviderRecoveryCodes(input: RegenerateEnterpriseIdentityProviderRecoveryCodesInput!): RegenerateEnterpriseIdentityProviderRecoveryCodesPayload
   regenerateVerifiableDomainToken(input: RegenerateVerifiableDomainTokenInput!): RegenerateVerifiableDomainTokenPayload
   rejectDeployments(input: RejectDeploymentsInput!): RejectDeploymentsPayload
+  rejectPendingIssueSuggestions(input: RejectPendingIssueSuggestionsInput!): RejectPendingIssueSuggestionsPayload
   removeAssigneesFromAssignable(input: RemoveAssigneesFromAssignableInput!): RemoveAssigneesFromAssignablePayload
   removeBlockedBy(input: RemoveBlockedByInput!): RemoveBlockedByPayload
   removeEnterpriseAdmin(input: RemoveEnterpriseAdminInput!): RemoveEnterpriseAdminPayload
@@ -6231,6 +6343,7 @@ type Mutation {
   updateEnterpriseOrganizationProjectsSetting(input: UpdateEnterpriseOrganizationProjectsSettingInput!): UpdateEnterpriseOrganizationProjectsSettingPayload
   updateEnterpriseOwnerOrganizationRole(input: UpdateEnterpriseOwnerOrganizationRoleInput!): UpdateEnterpriseOwnerOrganizationRolePayload
   updateEnterpriseProfile(input: UpdateEnterpriseProfileInput!): UpdateEnterpriseProfilePayload
+  updateEnterpriseProofOfPresenceRequiredSetting(input: UpdateEnterpriseProofOfPresenceRequiredSettingInput!): UpdateEnterpriseProofOfPresenceRequiredSettingPayload
   updateEnterpriseRepositoryProjectsSetting(input: UpdateEnterpriseRepositoryProjectsSettingInput!): UpdateEnterpriseRepositoryProjectsSettingPayload
   updateEnterpriseTwoFactorAuthenticationDisallowedMethodsSetting(input: UpdateEnterpriseTwoFactorAuthenticationDisallowedMethodsSettingInput!): UpdateEnterpriseTwoFactorAuthenticationDisallowedMethodsSettingPayload
   updateEnterpriseTwoFactorAuthenticationRequiredSetting(input: UpdateEnterpriseTwoFactorAuthenticationRequiredSettingInput!): UpdateEnterpriseTwoFactorAuthenticationRequiredSettingPayload
@@ -6260,6 +6373,7 @@ type Mutation {
   updateProjectV2ItemFieldValue(input: UpdateProjectV2ItemFieldValueInput!): UpdateProjectV2ItemFieldValuePayload
   updateProjectV2ItemPosition(input: UpdateProjectV2ItemPositionInput!): UpdateProjectV2ItemPositionPayload
   updateProjectV2StatusUpdate(input: UpdateProjectV2StatusUpdateInput!): UpdateProjectV2StatusUpdatePayload
+  updateProjectV2View(input: UpdateProjectV2ViewInput!): UpdateProjectV2ViewPayload
   updatePullRequest(input: UpdatePullRequestInput!): UpdatePullRequestPayload
   updatePullRequestBranch(input: UpdatePullRequestBranchInput!): UpdatePullRequestBranchPayload
   updatePullRequestReview(input: UpdatePullRequestReviewInput!): UpdatePullRequestReviewPayload
@@ -7120,6 +7234,7 @@ type Organization implements Actor & MemberStatusable & Node & PackageOwner & Pr
   estimatedNextSponsorsPayoutInCents: Int!
   hasSponsorsListing: Boolean!
   id: ID!
+  innersourceVulnerabilities(orderBy: SecurityVulnerabilityOrder = { field: UPDATED_AT, direction: DESC }, ecosystem: SecurityAdvisoryEcosystem, package: String, severities: [SecurityAdvisorySeverity!], after: String, before: String, first: Int, last: Int): SecurityVulnerabilityConnection!
   interactionAbility: RepositoryInteractionAbility
   ipAllowListEnabledSetting: IpAllowListEnabledSettingValue!
   ipAllowListEntries(after: String, before: String, first: Int, last: Int, orderBy: IpAllowListEntryOrder = { field: ALLOW_LIST_VALUE, direction: ASC }): IpAllowListEntryConnection!
@@ -7146,6 +7261,7 @@ type Organization implements Actor & MemberStatusable & Node & PackageOwner & Pr
   packages(after: String, before: String, first: Int, last: Int, names: [String], repositoryId: ID, packageType: PackageType, orderBy: PackageOrder = { field: CREATED_AT, direction: DESC }): PackageConnection!
   pendingMembers(after: String, before: String, first: Int, last: Int): UserConnection!
   pinnableItems(types: [PinnableItemType!], after: String, before: String, first: Int, last: Int): PinnableItemConnection!
+  pinnedIssueFields(after: String, before: String, first: Int, last: Int): IssueFieldsConnection
   pinnedItems(types: [PinnableItemType!], after: String, before: String, first: Int, last: Int): PinnableItemConnection!
   pinnedItemsRemaining: Int!
   project(number: Int!): Project @deprecated(reason: "Projects (classic) is being deprecated in favor of the new Projects experience, see: https://github.blog/changelog/2024-05-23-sunset-notice-projects-classic/. Removal on 2025-04-01 UTC.")
@@ -7553,6 +7669,66 @@ enum PatchStatus {
   COPIED
   MODIFIED
   CHANGED
+}
+
+type PendingAssigneeSuggestion {
+  actor: Actor
+  assignee: Assignee
+  createdAt: DateTime!
+  rationale: String
+  updatedAt: DateTime
+}
+
+type PendingCloseSuggestion {
+  actor: Actor
+  createdAt: DateTime!
+  duplicateOf: IssueOrPullRequest
+  rationale: String
+  stateReason: IssueStateReason
+  updatedAt: DateTime
+}
+
+type PendingFieldSuggestion {
+  actor: Actor
+  createdAt: DateTime!
+  issueField: IssueFields
+  rationale: String
+  suggestedValue: String
+  updatedAt: DateTime
+}
+
+union PendingIssueSuggestion = PendingAssigneeSuggestion | PendingCloseSuggestion | PendingFieldSuggestion | PendingLabelSuggestion | PendingTypeSuggestion
+
+enum PendingIssueSuggestionKind {
+  TYPE
+  LABEL
+  FIELD
+  ASSIGNEE
+  CLOSE
+}
+
+input PendingIssueSuggestionRef {
+  kind: PendingIssueSuggestionKind!
+  issueTypeId: ID
+  labelId: ID
+  issueFieldId: ID
+  assigneeId: ID
+}
+
+type PendingLabelSuggestion {
+  actor: Actor
+  createdAt: DateTime!
+  label: Label
+  rationale: String
+  updatedAt: DateTime
+}
+
+type PendingTypeSuggestion {
+  actor: Actor
+  createdAt: DateTime!
+  issueType: IssueType
+  rationale: String
+  updatedAt: DateTime
 }
 
 union PermissionGranter = EnterpriseTeam | Organization | Repository | Team
@@ -8041,6 +8217,7 @@ type ProjectV2Connection {
 enum ProjectV2CustomFieldType {
   TEXT
   SINGLE_SELECT
+  MULTI_SELECT
   NUMBER
   DATE
   ITERATION
@@ -8061,6 +8238,8 @@ type ProjectV2Field implements Node & ProjectV2FieldCommon {
   dataType: ProjectV2FieldType!
   databaseId: Int
   id: ID!
+  isIssueField: Boolean!
+  issueField: IssueFields
   name: String!
   project: ProjectV2!
   updatedAt: DateTime!
@@ -8071,12 +8250,13 @@ interface ProjectV2FieldCommon {
   dataType: ProjectV2FieldType!
   databaseId: Int
   id: ID!
+  isIssueField: Boolean!
   name: String!
   project: ProjectV2!
   updatedAt: DateTime!
 }
 
-union ProjectV2FieldConfiguration = ProjectV2Field | ProjectV2IterationField | ProjectV2SingleSelectField
+union ProjectV2FieldConfiguration = ProjectV2Field | ProjectV2IterationField | ProjectV2MultiSelectField | ProjectV2SingleSelectField
 
 type ProjectV2FieldConfigurationConnection {
   edges: [ProjectV2FieldConfigurationEdge]
@@ -8123,6 +8303,7 @@ enum ProjectV2FieldType {
   TITLE
   TEXT
   SINGLE_SELECT
+  MULTI_SELECT
   NUMBER
   DATE
   ITERATION
@@ -8141,6 +8322,7 @@ input ProjectV2FieldValue {
   number: Float
   date: Date
   singleSelectOptionId: String
+  multiSelectOptionIds: [String!]
   iterationId: String
 }
 
@@ -8220,6 +8402,18 @@ type ProjectV2ItemFieldMilestoneValue {
   milestone: Milestone
 }
 
+type ProjectV2ItemFieldMultiSelectValue implements Node & ProjectV2ItemFieldValueCommon {
+  createdAt: DateTime!
+  creator: Actor
+  databaseId: Int
+  field: ProjectV2FieldConfiguration!
+  id: ID!
+  item: ProjectV2Item!
+  options: [ProjectV2MultiSelectFieldOption!]
+  updatedAt: DateTime!
+  value: String!
+}
+
 type ProjectV2ItemFieldNumberValue implements Node & ProjectV2ItemFieldValueCommon {
   createdAt: DateTime!
   creator: Actor
@@ -8278,7 +8472,7 @@ type ProjectV2ItemFieldUserValue {
   users(after: String, before: String, first: Int, last: Int): UserConnection
 }
 
-union ProjectV2ItemFieldValue = ProjectV2ItemFieldDateValue | ProjectV2ItemFieldIterationValue | ProjectV2ItemFieldLabelValue | ProjectV2ItemFieldMilestoneValue | ProjectV2ItemFieldNumberValue | ProjectV2ItemFieldPullRequestValue | ProjectV2ItemFieldRepositoryValue | ProjectV2ItemFieldReviewerValue | ProjectV2ItemFieldSingleSelectValue | ProjectV2ItemFieldTextValue | ProjectV2ItemFieldUserValue | ProjectV2ItemIssueFieldValue
+union ProjectV2ItemFieldValue = ProjectV2ItemFieldDateValue | ProjectV2ItemFieldIterationValue | ProjectV2ItemFieldLabelValue | ProjectV2ItemFieldMilestoneValue | ProjectV2ItemFieldMultiSelectValue | ProjectV2ItemFieldNumberValue | ProjectV2ItemFieldPullRequestValue | ProjectV2ItemFieldRepositoryValue | ProjectV2ItemFieldReviewerValue | ProjectV2ItemFieldSingleSelectValue | ProjectV2ItemFieldTextValue | ProjectV2ItemFieldUserValue | ProjectV2ItemIssueFieldValue
 
 interface ProjectV2ItemFieldValueCommon {
   createdAt: DateTime!
@@ -8354,6 +8548,7 @@ type ProjectV2IterationField implements Node & ProjectV2FieldCommon {
   dataType: ProjectV2FieldType!
   databaseId: Int
   id: ID!
+  isIssueField: Boolean!
   name: String!
   project: ProjectV2!
   updatedAt: DateTime!
@@ -8378,6 +8573,35 @@ type ProjectV2IterationFieldIteration {
   startDate: Date!
   title: String!
   titleHTML: String!
+}
+
+type ProjectV2MultiSelectField implements Node & ProjectV2FieldCommon {
+  createdAt: DateTime!
+  dataType: ProjectV2FieldType!
+  databaseId: Int
+  id: ID!
+  isIssueField: Boolean!
+  issueField: IssueFields
+  multiSelectOptions(names: [String!]): [ProjectV2MultiSelectFieldOption!]!
+  name: String!
+  project: ProjectV2!
+  updatedAt: DateTime!
+}
+
+type ProjectV2MultiSelectFieldOption {
+  color: ProjectV2SingleSelectFieldOptionColor!
+  description: String!
+  descriptionHTML: String!
+  id: String!
+  name: String!
+  nameHTML: String!
+}
+
+input ProjectV2MultiSelectFieldOptionInput {
+  id: String
+  name: String!
+  color: ProjectV2SingleSelectFieldOptionColor!
+  description: String!
 }
 
 input ProjectV2Order {
@@ -8420,6 +8644,8 @@ type ProjectV2SingleSelectField implements Node & ProjectV2FieldCommon {
   dataType: ProjectV2FieldType!
   databaseId: Int
   id: ID!
+  isIssueField: Boolean!
+  issueField: IssueFields
   name: String!
   options(names: [String!]): [ProjectV2SingleSelectFieldOption!]!
   project: ProjectV2!
@@ -8537,6 +8763,7 @@ enum ProjectV2StatusUpdateStatus {
 }
 
 type ProjectV2View implements Node {
+  configuration: ProjectV2ViewConfiguration!
   createdAt: DateTime!
   databaseId: Int @deprecated(reason: "`databaseId` will be removed because it does not support 64-bit signed integer identifiers. Use `fullDatabaseId` instead. Removal on 2025-04-01 UTC.")
   fields(after: String, before: String, first: Int, last: Int, orderBy: ProjectV2FieldOrder = { field: POSITION, direction: ASC }): ProjectV2FieldConfigurationConnection
@@ -8555,6 +8782,14 @@ type ProjectV2View implements Node {
   verticalGroupBy(after: String, before: String, first: Int, last: Int, orderBy: ProjectV2FieldOrder = { field: POSITION, direction: ASC }): ProjectV2FieldConnection @deprecated(reason: "The `ProjectV2View#vertical_group_by` API is deprecated in favour of the more capable `ProjectV2View#vertical_group_by_fields` API. Check out the `ProjectV2View#vertical_group_by_fields` API as an example for the more capable alternative. Removal on 2023-04-01 UTC.")
   verticalGroupByFields(after: String, before: String, first: Int, last: Int, orderBy: ProjectV2FieldOrder = { field: POSITION, direction: ASC }): ProjectV2FieldConfigurationConnection
   visibleFields(after: String, before: String, first: Int, last: Int, orderBy: ProjectV2FieldOrder = { field: POSITION, direction: ASC }): ProjectV2FieldConnection @deprecated(reason: "The `ProjectV2View#visibleFields` API is deprecated in favour of the more capable `ProjectV2View#fields` API. Check out the `ProjectV2View#fields` API as an example for the more capable alternative. Removal on 2023-01-01 UTC.")
+}
+
+type ProjectV2ViewConfiguration {
+  visibleFields(after: String, before: String, first: Int, last: Int): ProjectV2FieldConfigurationConnection!
+}
+
+input ProjectV2ViewConfigurationInput {
+  visibleFieldIds: [ID!]
 }
 
 type ProjectV2ViewConnection {
@@ -8632,6 +8867,12 @@ type PromoteRepositoryCustomPropertyPayload {
   repositoryCustomProperty: RepositoryCustomProperty
 }
 
+enum ProofOfPresenceRequirement {
+  NO_POLICY
+  REAUTH
+  MFA
+}
+
 type PropertyTargetDefinition {
   name: String!
   propertyValues: [String!]!
@@ -8697,7 +8938,7 @@ type PullRequest implements Assignable & Closable & Comment & Labelable & Lockab
   checksUrl: URI!
   closed: Boolean!
   closedAt: DateTime
-  closingIssuesReferences(userLinkedOnly: Boolean = false, after: String, before: String, first: Int, last: Int, orderBy: IssueOrder): IssueConnection
+  closingIssuesReferences(userLinkedOnly: Boolean = false, excludeUserLinked: Boolean = false, after: String, before: String, first: Int, last: Int, orderBy: IssueOrder): IssueConnection
   comments(orderBy: IssueCommentOrder, after: String, before: String, first: Int, last: Int): IssueCommentConnection!
   commits(after: String, before: String, first: Int, last: Int): PullRequestCommitConnection!
   createdAt: DateTime!
@@ -9564,6 +9805,18 @@ input RejectDeploymentsInput {
 type RejectDeploymentsPayload {
   clientMutationId: String
   deployments: [Deployment!]
+}
+
+input RejectPendingIssueSuggestionsInput {
+  clientMutationId: String
+  issueId: ID!
+  actorId: ID!
+  suggestions: [PendingIssueSuggestionRef!]!
+}
+
+type RejectPendingIssueSuggestionsPayload {
+  clientMutationId: String
+  issue: Issue
 }
 
 type Release implements Node & Reactable & UniformResourceLocatable {
@@ -13265,8 +13518,10 @@ type UnlabeledEvent implements Node {
   actor: Actor
   createdAt: DateTime!
   id: ID!
+  intent: IssueUpdateIntent
   label: Label!
   labelable: Labelable!
+  rationale: IssueEventRationale @deprecated(reason: "Use `intent` instead. This field is being removed and now always returns null.")
 }
 
 input UnlinkProjectV2FromRepositoryInput {
@@ -13715,6 +13970,18 @@ type UpdateEnterpriseProfilePayload {
   enterprise: Enterprise
 }
 
+input UpdateEnterpriseProofOfPresenceRequiredSettingInput {
+  clientMutationId: String
+  enterpriseId: ID!
+  settingValue: ProofOfPresenceRequirement!
+}
+
+type UpdateEnterpriseProofOfPresenceRequiredSettingPayload {
+  clientMutationId: String
+  enterprise: Enterprise
+  message: String
+}
+
 input UpdateEnterpriseRepositoryProjectsSettingInput {
   clientMutationId: String
   enterpriseId: ID!
@@ -13858,9 +14125,11 @@ input UpdateIssueInput {
   labelIds: [ID!]
   labels: [LabelUpdateInput!]
   state: IssueState
+  stateInput: IssueStateUpdateInput
   projectIds: [ID!]
   issueTypeId: ID
   issueType: IssueTypeUpdateInput
+  issueFieldUpdates: [IssueFieldUpdateInput!]
   agentAssignment: AgentAssignmentInput
 }
 
@@ -14028,6 +14297,7 @@ input UpdateProjectV2FieldInput {
   fieldId: ID!
   name: String
   singleSelectOptions: [ProjectV2SingleSelectFieldOptionInput!]
+  multiSelectOptions: [ProjectV2MultiSelectFieldOptionInput!]
   iterationConfiguration: ProjectV2IterationFieldConfigurationInput
 }
 
@@ -14088,6 +14358,20 @@ input UpdateProjectV2StatusUpdateInput {
 type UpdateProjectV2StatusUpdatePayload {
   clientMutationId: String
   statusUpdate: ProjectV2StatusUpdate
+}
+
+input UpdateProjectV2ViewInput {
+  clientMutationId: String
+  viewId: ID!
+  name: String
+  layout: ProjectV2ViewLayout
+  filter: String
+  configuration: ProjectV2ViewConfigurationInput
+}
+
+type UpdateProjectV2ViewPayload {
+  clientMutationId: String
+  projectV2View: ProjectV2View
 }
 
 input UpdatePullRequestBranchInput {
@@ -14753,4 +15037,4 @@ scalar X509Certificate
 
 scalar _Any
 
-union _Entity = AddedToMergeQueueEvent | AddedToProjectEvent | AddedToProjectV2Event | App | AssignedEvent | AutoMergeDisabledEvent | AutoMergeEnabledEvent | AutoRebaseEnabledEvent | AutoSquashEnabledEvent | AutomaticBaseChangeFailedEvent | AutomaticBaseChangeSucceededEvent | BaseRefChangedEvent | BaseRefDeletedEvent | BaseRefForcePushedEvent | Blob | BlockedByAddedEvent | BlockedByRemovedEvent | BlockingAddedEvent | BlockingRemovedEvent | Bot | BranchProtectionRule | BypassForcePushAllowance | BypassPullRequestAllowance | CWE | CheckRun | CheckSuite | ClosedEvent | CodeOfConduct | CommentDeletedEvent | Commit | CommitComment | CommitCommentThread | Comparison | ConnectedEvent | ConvertToDraftEvent | ConvertedFromDraftEvent | ConvertedNoteToIssueEvent | ConvertedToDiscussionEvent | CrossReferencedEvent | DemilestonedEvent | DependencyGraphManifest | DeployKey | DeployedEvent | Deployment | DeploymentEnvironmentChangedEvent | DeploymentReview | DeploymentStatus | DisconnectedEvent | Discussion | DiscussionCategory | DiscussionComment | DiscussionPoll | DiscussionPollOption | DraftIssue | Enterprise | EnterpriseAdministratorInvitation | EnterpriseIdentityProvider | EnterpriseMemberInvitation | EnterpriseRepositoryInfo | EnterpriseServerInstallation | EnterpriseServerUserAccount | EnterpriseServerUserAccountEmail | EnterpriseServerUserAccountsUpload | EnterpriseTeam | EnterpriseUserAccount | Environment | ExternalIdentity | Gist | GistComment | HeadRefDeletedEvent | HeadRefForcePushedEvent | HeadRefRestoredEvent | IpAllowListEntry | Issue | IssueComment | IssueCommentPinnedEvent | IssueCommentUnpinnedEvent | IssueFieldAddedEvent | IssueFieldChangedEvent | IssueFieldDate | IssueFieldDateValue | IssueFieldMultiSelect | IssueFieldMultiSelectValue | IssueFieldNumber | IssueFieldNumberValue | IssueFieldRemovedEvent | IssueFieldSingleSelect | IssueFieldSingleSelectOption | IssueFieldSingleSelectValue | IssueFieldText | IssueFieldTextValue | IssueType | IssueTypeAddedEvent | IssueTypeChangedEvent | IssueTypeRemovedEvent | Label | LabeledEvent | Language | License | LinkedBranch | LockedEvent | Mannequin | MarkedAsDuplicateEvent | MarketplaceCategory | MarketplaceListing | MemberFeatureRequestNotification | MembersCanDeleteReposClearAuditEntry | MembersCanDeleteReposDisableAuditEntry | MembersCanDeleteReposEnableAuditEntry | MentionedEvent | MergeQueue | MergeQueueEntry | MergedEvent | MigrationSource | Milestone | MilestonedEvent | MovedColumnsInProjectEvent | OIDCProvider | OauthApplicationCreateAuditEntry | OrgAddBillingManagerAuditEntry | OrgAddMemberAuditEntry | OrgBlockUserAuditEntry | OrgConfigDisableCollaboratorsOnlyAuditEntry | OrgConfigEnableCollaboratorsOnlyAuditEntry | OrgCreateAuditEntry | OrgDisableOauthAppRestrictionsAuditEntry | OrgDisableSamlAuditEntry | OrgDisableTwoFactorRequirementAuditEntry | OrgEnableOauthAppRestrictionsAuditEntry | OrgEnableSamlAuditEntry | OrgEnableTwoFactorRequirementAuditEntry | OrgInviteMemberAuditEntry | OrgInviteToBusinessAuditEntry | OrgOauthAppAccessApprovedAuditEntry | OrgOauthAppAccessBlockedAuditEntry | OrgOauthAppAccessDeniedAuditEntry | OrgOauthAppAccessRequestedAuditEntry | OrgOauthAppAccessUnblockedAuditEntry | OrgRemoveBillingManagerAuditEntry | OrgRemoveMemberAuditEntry | OrgRemoveOutsideCollaboratorAuditEntry | OrgRestoreMemberAuditEntry | OrgUnblockUserAuditEntry | OrgUpdateDefaultRepositoryPermissionAuditEntry | OrgUpdateMemberAuditEntry | OrgUpdateMemberRepositoryCreationPermissionAuditEntry | OrgUpdateMemberRepositoryInvitationPermissionAuditEntry | Organization | OrganizationIdentityProvider | OrganizationInvitation | Package | PackageFile | PackageTag | PackageVersion | ParentIssueAddedEvent | ParentIssueRemovedEvent | PinnedDiscussion | PinnedEnvironment | PinnedEvent | PinnedIssue | PinnedIssueComment | PrivateRepositoryForkingDisableAuditEntry | PrivateRepositoryForkingEnableAuditEntry | Project | ProjectCard | ProjectColumn | ProjectV2 | ProjectV2Field | ProjectV2Item | ProjectV2ItemFieldDateValue | ProjectV2ItemFieldIterationValue | ProjectV2ItemFieldNumberValue | ProjectV2ItemFieldSingleSelectValue | ProjectV2ItemFieldTextValue | ProjectV2ItemStatusChangedEvent | ProjectV2IterationField | ProjectV2SingleSelectField | ProjectV2StatusUpdate | ProjectV2View | ProjectV2Workflow | PublicKey | PullRequest | PullRequestCommit | PullRequestCommitCommentThread | PullRequestReview | PullRequestReviewComment | PullRequestReviewThread | PullRequestStack | PullRequestStackEntry | PullRequestThread | Push | PushAllowance | Query | Reaction | ReadyForReviewEvent | Ref | ReferencedEvent | Release | ReleaseAsset | RemovedFromMergeQueueEvent | RemovedFromProjectEvent | RemovedFromProjectV2Event | RenamedTitleEvent | ReopenedEvent | RepoAccessAuditEntry | RepoAddMemberAuditEntry | RepoAddTopicAuditEntry | RepoArchivedAuditEntry | RepoChangeMergeSettingAuditEntry | RepoConfigDisableAnonymousGitAccessAuditEntry | RepoConfigDisableCollaboratorsOnlyAuditEntry | RepoConfigDisableContributorsOnlyAuditEntry | RepoConfigDisableSockpuppetDisallowedAuditEntry | RepoConfigEnableAnonymousGitAccessAuditEntry | RepoConfigEnableCollaboratorsOnlyAuditEntry | RepoConfigEnableContributorsOnlyAuditEntry | RepoConfigEnableSockpuppetDisallowedAuditEntry | RepoConfigLockAnonymousGitAccessAuditEntry | RepoConfigUnlockAnonymousGitAccessAuditEntry | RepoCreateAuditEntry | RepoDestroyAuditEntry | RepoRemoveMemberAuditEntry | RepoRemoveTopicAuditEntry | Repository | RepositoryCustomProperty | RepositoryInvitation | RepositoryMigration | RepositoryRule | RepositoryRuleset | RepositoryRulesetBypassActor | RepositoryTopic | RepositoryVisibilityChangeDisableAuditEntry | RepositoryVisibilityChangeEnableAuditEntry | RepositoryVulnerabilityAlert | ReviewDismissalAllowance | ReviewDismissedEvent | ReviewRequest | ReviewRequestRemovedEvent | ReviewRequestedEvent | SavedReply | SecurityAdvisory | SponsorsActivity | SponsorsListing | SponsorsListingFeaturedItem | SponsorsTier | Sponsorship | SponsorshipNewsletter | Status | StatusCheckRollup | StatusContext | SubIssueAddedEvent | SubIssueRemovedEvent | SubscribedEvent | Team | TeamAddMemberAuditEntry | TeamAddRepositoryAuditEntry | TeamChangeParentTeamAuditEntry | TeamRemoveMemberAuditEntry | TeamRemoveRepositoryAuditEntry | Topic | TransferredEvent | Tree | UnassignedEvent | UnlabeledEvent | UnlockedEvent | UnmarkedAsDuplicateEvent | UnpinnedEvent | UnsubscribedEvent | User | UserBlockedEvent | UserContentEdit | UserList | UserNamespaceRepository | UserStatus | VerifiableDomain | Workflow | WorkflowRun | WorkflowRunFile
+union _Entity = AddedToMergeQueueEvent | AddedToProjectEvent | AddedToProjectV2Event | App | AssignedEvent | AutoMergeDisabledEvent | AutoMergeEnabledEvent | AutoRebaseEnabledEvent | AutoSquashEnabledEvent | AutomaticBaseChangeFailedEvent | AutomaticBaseChangeSucceededEvent | BaseRefChangedEvent | BaseRefDeletedEvent | BaseRefForcePushedEvent | Blob | BlockedByAddedEvent | BlockedByRemovedEvent | BlockingAddedEvent | BlockingRemovedEvent | Bot | BranchProtectionRule | BypassForcePushAllowance | BypassPullRequestAllowance | CWE | CheckRun | CheckSuite | ClosedEvent | CodeOfConduct | CommentDeletedEvent | Commit | CommitComment | CommitCommentThread | Comparison | ConnectedEvent | ConvertToDraftEvent | ConvertedFromDraftEvent | ConvertedNoteToIssueEvent | ConvertedToDiscussionEvent | CrossReferencedEvent | DemilestonedEvent | DependencyGraphManifest | DeployKey | DeployedEvent | Deployment | DeploymentEnvironmentChangedEvent | DeploymentReview | DeploymentStatus | DisconnectedEvent | Discussion | DiscussionCategory | DiscussionComment | DiscussionPoll | DiscussionPollOption | DraftIssue | Enterprise | EnterpriseAdministratorInvitation | EnterpriseIdentityProvider | EnterpriseMemberInvitation | EnterpriseRepositoryInfo | EnterpriseServerInstallation | EnterpriseServerUserAccount | EnterpriseServerUserAccountEmail | EnterpriseServerUserAccountsUpload | EnterpriseTeam | EnterpriseUserAccount | Environment | ExternalIdentity | Gist | GistComment | HeadRefDeletedEvent | HeadRefForcePushedEvent | HeadRefRestoredEvent | IpAllowListEntry | Issue | IssueComment | IssueCommentPinnedEvent | IssueCommentUnpinnedEvent | IssueFieldAddedEvent | IssueFieldChangedEvent | IssueFieldDate | IssueFieldDateValue | IssueFieldMultiSelect | IssueFieldMultiSelectValue | IssueFieldNumber | IssueFieldNumberValue | IssueFieldRemovedEvent | IssueFieldSingleSelect | IssueFieldSingleSelectOption | IssueFieldSingleSelectValue | IssueFieldText | IssueFieldTextValue | IssueType | IssueTypeAddedEvent | IssueTypeChangedEvent | IssueTypeRemovedEvent | Label | LabeledEvent | Language | License | LinkedBranch | LockedEvent | Mannequin | MarkedAsDuplicateEvent | MarketplaceCategory | MarketplaceListing | MemberFeatureRequestNotification | MembersCanDeleteReposClearAuditEntry | MembersCanDeleteReposDisableAuditEntry | MembersCanDeleteReposEnableAuditEntry | MentionedEvent | MergeQueue | MergeQueueEntry | MergedEvent | MigrationSource | Milestone | MilestonedEvent | MovedColumnsInProjectEvent | OIDCProvider | OauthApplicationCreateAuditEntry | OrgAddBillingManagerAuditEntry | OrgAddMemberAuditEntry | OrgBlockUserAuditEntry | OrgConfigDisableCollaboratorsOnlyAuditEntry | OrgConfigEnableCollaboratorsOnlyAuditEntry | OrgCreateAuditEntry | OrgDisableOauthAppRestrictionsAuditEntry | OrgDisableSamlAuditEntry | OrgDisableTwoFactorRequirementAuditEntry | OrgEnableOauthAppRestrictionsAuditEntry | OrgEnableSamlAuditEntry | OrgEnableTwoFactorRequirementAuditEntry | OrgInviteMemberAuditEntry | OrgInviteToBusinessAuditEntry | OrgOauthAppAccessApprovedAuditEntry | OrgOauthAppAccessBlockedAuditEntry | OrgOauthAppAccessDeniedAuditEntry | OrgOauthAppAccessRequestedAuditEntry | OrgOauthAppAccessUnblockedAuditEntry | OrgRemoveBillingManagerAuditEntry | OrgRemoveMemberAuditEntry | OrgRemoveOutsideCollaboratorAuditEntry | OrgRestoreMemberAuditEntry | OrgUnblockUserAuditEntry | OrgUpdateDefaultRepositoryPermissionAuditEntry | OrgUpdateMemberAuditEntry | OrgUpdateMemberRepositoryCreationPermissionAuditEntry | OrgUpdateMemberRepositoryInvitationPermissionAuditEntry | Organization | OrganizationIdentityProvider | OrganizationInvitation | Package | PackageFile | PackageTag | PackageVersion | ParentIssueAddedEvent | ParentIssueRemovedEvent | PinnedDiscussion | PinnedEnvironment | PinnedEvent | PinnedIssue | PinnedIssueComment | PrivateRepositoryForkingDisableAuditEntry | PrivateRepositoryForkingEnableAuditEntry | Project | ProjectCard | ProjectColumn | ProjectV2 | ProjectV2Field | ProjectV2Item | ProjectV2ItemFieldDateValue | ProjectV2ItemFieldIterationValue | ProjectV2ItemFieldMultiSelectValue | ProjectV2ItemFieldNumberValue | ProjectV2ItemFieldSingleSelectValue | ProjectV2ItemFieldTextValue | ProjectV2ItemStatusChangedEvent | ProjectV2IterationField | ProjectV2MultiSelectField | ProjectV2SingleSelectField | ProjectV2StatusUpdate | ProjectV2View | ProjectV2Workflow | PublicKey | PullRequest | PullRequestCommit | PullRequestCommitCommentThread | PullRequestReview | PullRequestReviewComment | PullRequestReviewThread | PullRequestStack | PullRequestStackEntry | PullRequestThread | Push | PushAllowance | Query | Reaction | ReadyForReviewEvent | Ref | ReferencedEvent | Release | ReleaseAsset | RemovedFromMergeQueueEvent | RemovedFromProjectEvent | RemovedFromProjectV2Event | RenamedTitleEvent | ReopenedEvent | RepoAccessAuditEntry | RepoAddMemberAuditEntry | RepoAddTopicAuditEntry | RepoArchivedAuditEntry | RepoChangeMergeSettingAuditEntry | RepoConfigDisableAnonymousGitAccessAuditEntry | RepoConfigDisableCollaboratorsOnlyAuditEntry | RepoConfigDisableContributorsOnlyAuditEntry | RepoConfigDisableSockpuppetDisallowedAuditEntry | RepoConfigEnableAnonymousGitAccessAuditEntry | RepoConfigEnableCollaboratorsOnlyAuditEntry | RepoConfigEnableContributorsOnlyAuditEntry | RepoConfigEnableSockpuppetDisallowedAuditEntry | RepoConfigLockAnonymousGitAccessAuditEntry | RepoConfigUnlockAnonymousGitAccessAuditEntry | RepoCreateAuditEntry | RepoDestroyAuditEntry | RepoRemoveMemberAuditEntry | RepoRemoveTopicAuditEntry | Repository | RepositoryCustomProperty | RepositoryInvitation | RepositoryMigration | RepositoryRule | RepositoryRuleset | RepositoryRulesetBypassActor | RepositoryTopic | RepositoryVisibilityChangeDisableAuditEntry | RepositoryVisibilityChangeEnableAuditEntry | RepositoryVulnerabilityAlert | ReviewDismissalAllowance | ReviewDismissedEvent | ReviewRequest | ReviewRequestRemovedEvent | ReviewRequestedEvent | SavedReply | SecurityAdvisory | SponsorsActivity | SponsorsListing | SponsorsListingFeaturedItem | SponsorsTier | Sponsorship | SponsorshipNewsletter | Status | StatusCheckRollup | StatusContext | SubIssueAddedEvent | SubIssueRemovedEvent | SubscribedEvent | Team | TeamAddMemberAuditEntry | TeamAddRepositoryAuditEntry | TeamChangeParentTeamAuditEntry | TeamRemoveMemberAuditEntry | TeamRemoveRepositoryAuditEntry | Topic | TransferredEvent | Tree | UnassignedEvent | UnlabeledEvent | UnlockedEvent | UnmarkedAsDuplicateEvent | UnpinnedEvent | UnsubscribedEvent | User | UserBlockedEvent | UserContentEdit | UserList | UserNamespaceRepository | UserStatus | VerifiableDomain | Workflow | WorkflowRun | WorkflowRunFile
