@@ -2,6 +2,7 @@ import { getActiveMeKey, listAccounts } from '@/lib/auth';
 import { githubUrlToAppPath } from '@/lib/githubUrl';
 import { fuzzyMatch, type RecentRepo } from '@/lib/recentRepos';
 import { isPathExpression } from '@/lib/repoPath';
+import { TRIAGE } from '@/lib/triage';
 import { parseSlashCommand, slashMatches } from './slash';
 import type { GotoCandidate, GotoProvider } from './types';
 
@@ -222,6 +223,53 @@ export const urlProvider: GotoProvider = (q) => {
   ];
 };
 
+const TRIAGE_JUMP: {
+  kind: keyof typeof TRIAGE;
+  icon: GotoCandidate['icon'];
+  value: string;
+  priority: number;
+}[] = [
+  {
+    kind: 'assigned',
+    icon: 'issues',
+    value: 'assigned issues triage inbox',
+    priority: 25,
+  },
+  {
+    kind: 'reviews',
+    icon: 'prs',
+    value: 'review requests triage inbox reviews requested prs pull',
+    priority: 26,
+  },
+  {
+    kind: 'prs',
+    icon: 'prs',
+    value: 'my open prs triage inbox author pull requests',
+    priority: 27,
+  },
+];
+
+/** Global inboxes — not slash commands. `/issues` stays this-repo. */
+export const triageProvider: GotoProvider = (q) => {
+  if (parseSlashCommand(q)) return [];
+  return TRIAGE_JUMP.flatMap((item) => {
+    if (q && !fuzzyMatch(item.value, q)) return [];
+    const spec = TRIAGE[item.kind];
+    return [
+      {
+        id: `triage-${item.kind}`,
+        label: spec.title,
+        hint: spec.path,
+        value: item.value,
+        group: GROUP.jump,
+        icon: item.icon,
+        priority: item.priority,
+        action: { kind: 'navigate' as const, to: spec.path },
+      },
+    ];
+  });
+};
+
 export const homeProvider: GotoProvider = (q) => {
   if (parseSlashCommand(q)) return [];
   if (q && !fuzzyMatch('home ghweb', q)) return [];
@@ -294,6 +342,7 @@ function filterRepos(
 export const defaultProviders: GotoProvider[] = [
   switchAccountProvider,
   hereSectionProvider,
+  triageProvider,
   jumpSectionProvider,
   reposProvider,
   urlProvider,

@@ -67,7 +67,8 @@ export function parseRepoFromPath(pathname: string): {
 } | null {
   const parts = pathname.split('/').filter(Boolean);
   if (parts.length < 2) return null;
-  if (parts[0] === 'search') return null;
+  // App-owned first segments — not owner/name.
+  if (parts[0] === 'search' || parts[0] === 'triage') return null;
   return { owner: parts[0]!, name: parts[1]! };
 }
 

@@ -14,6 +14,7 @@ import { PullReviewDraftProvider } from '@/lib/pullReviewDraft';
 import { graphql, useLazyLoadQuery } from 'react-relay';
 import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
 import type { routerViewerQuery } from './__generated__/routerViewerQuery.graphql';
+import type { TriageKind } from '@/lib/triage';
 
 const HomePage = lazy(() =>
   import('@/screens/HomePage').then((m) => ({ default: m.HomePage })),
@@ -74,6 +75,11 @@ const SearchPage = lazy(() =>
 );
 const UserPage = lazy(() =>
   import('@/screens/UserPage').then((m) => ({ default: m.UserPage })),
+);
+const TriageListPage = lazy(() =>
+  import('@/screens/TriageListPage').then((m) => ({
+    default: m.TriageListPage,
+  })),
 );
 
 const viewerQuery = graphql`
@@ -184,6 +190,34 @@ const searchRoute = createRoute({
       </ViewerChrome>
     );
   },
+});
+
+function TriageRoute({ kind }: { kind: TriageKind }) {
+  return (
+    <ViewerChrome>
+      <Suspend>
+        <TriageListPage kind={kind} />
+      </Suspend>
+    </ViewerChrome>
+  );
+}
+
+const triageAssignedRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/triage/assigned',
+  component: () => <TriageRoute kind="assigned" />,
+});
+
+const triageReviewsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/triage/reviews',
+  component: () => <TriageRoute kind="reviews" />,
+});
+
+const triagePrsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/triage/prs',
+  component: () => <TriageRoute kind="prs" />,
 });
 
 /** User / org profile — single segment so it does not clash with `/$owner/$name`. */
@@ -473,6 +507,9 @@ const compareRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   searchRoute,
+  triageAssignedRoute,
+  triageReviewsRoute,
+  triagePrsRoute,
   userRoute,
   repoLayoutRoute.addChildren([
     repoIndexRoute,

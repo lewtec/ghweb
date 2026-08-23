@@ -20,6 +20,12 @@ describe('parseRepoFromPath', () => {
       name: 'nixpkgs',
     });
   });
+
+  it('does not treat /triage/* as a repo', () => {
+    expect(parseRepoFromPath('/triage/assigned')).toBeNull();
+    expect(parseRepoFromPath('/triage/reviews')).toBeNull();
+    expect(parseRepoFromPath('/triage/prs')).toBeNull();
+  });
 });
 
 describe('parseCodeLocation', () => {

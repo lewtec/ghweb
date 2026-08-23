@@ -43,6 +43,35 @@ describe('section providers', () => {
     expect(commits.every((i) => i.icon === 'commits')).toBe(true);
   });
 
+  it('offers the three global triage inboxes', () => {
+    const empty = collectGotoCandidates('', ctx());
+    expect(empty.map((i) => i.action)).toEqual(
+      expect.arrayContaining([
+        { kind: 'navigate', to: '/triage/assigned' },
+        { kind: 'navigate', to: '/triage/reviews' },
+        { kind: 'navigate', to: '/triage/prs' },
+      ]),
+    );
+
+    const assigned = collectGotoCandidates('assigned', ctx());
+    expect(
+      assigned.some(
+        (i) =>
+          i.action.kind === 'navigate' && i.action.to === '/triage/assigned',
+      ),
+    ).toBe(true);
+
+    const slash = collectGotoCandidates(
+      '/issues',
+      ctx({ pathname: '/o/r', repo: { owner: 'o', name: 'r' } }),
+    );
+    expect(
+      slash.some(
+        (i) => i.action.kind === 'navigate' && i.action.to.startsWith('/triage/'),
+      ),
+    ).toBe(false);
+  });
+
   it('does not invent path items sync (async pathSuggest owns Path group)', () => {
     const items = collectGotoCandidates(
       'src',

@@ -54,14 +54,14 @@ Auth model assumes a user who can create a PAT (same mental model as `gh auth to
 
 | Area | Capability |
 |------|------------|
-| **Home `/`** | Hybrid **tool home**: triage strip (review requests, assigned issues, your open PRs/issues — exact widgets as API allows) + repo list (affiliations, starred/pins as data allows) |
+| **Home `/`** | Hybrid **tool home**: triage strip (assigned issues, review requests, your open PRs) + repo list (affiliations, starred/pins as data allows). Each strip card links to an exhaustive list — see §5.6 |
 | **Repo** | Repo home, navigation into code / issues / PRs |
 | **Code** | **Read-only** tree + file view + README/markdown; honest handling of large/binary/LFS (message or open on GitHub) |
 | **Commits** | History + single commit + compare — see §5.5 |
 | **Issues** | **Power triage** — view + broad writes (see §5.3) |
 | **Pull requests** | **Power triage** — conversation, files (read), reviews, merge when allowed |
 | **Search** | **GraphQL `search` only** — repos, issues, PRs, users/orgs (types the schema supports well). No v1 code search |
-| **Chrome** | Avatar (viewer + **account switcher**), **breadcrumb** `ghweb > owner/repo` + code/issues/PRs/**Actions** icons (no sidebar; **no** Commits section icon), command palette (`/code` `/issues` `/prs` `/actions` `/commits` `/switch`) |
+| **Chrome** | Avatar (viewer + **account switcher**), **breadcrumb** `ghweb > owner/repo` + code/issues/PRs/**Actions** icons (no sidebar; **no** Commits section icon), command palette (`/code` `/issues` `/prs` `/actions` `/commits` `/switch`; Jump items for the three `/triage/*` pages — no `/triage` slash) |
 | **Actions** | **GraphQL-first console** — see §5.4 |
 
 ### 5.2 Later (roadmap, not v1 gates)
@@ -105,6 +105,26 @@ Auth model assumes a user who can create a PAT (same mental model as `gh auth to
 | API | **GraphQL** for history list + commit header; **REST** for commit files/patches and compare (hybrid, like PR files) |
 | Diff UI | **Shared** with PR files (`@git-diff-view`, patch normalize, large/binary/missing → message + Open on GitHub) |
 
+### 5.6 Home triage lists
+
+**Intent:** `/` stays a teaser. Each of the three cards has a page that lists the same search, paginated.
+
+Locked 2026-08-23.
+
+| Decision | Choice |
+|----------|--------|
+| Pages | The three home cards only. No “my open issues” page |
+| Routes | `/triage/assigned` · `/triage/reviews` · `/triage/prs` (app-owned; not github.com `/issues` / `/pulls`) |
+| Queries | Same as the home card: `is:open is:issue assignee:@me sort:updated-desc` · `is:open is:pr review-requested:@me sort:updated-desc` · `is:open is:pr author:@me sort:updated-desc` |
+| Home | Keep `first: 8`. Card title links to the page. **See all N** when `issueCount > 8` |
+| Load | Relay cursor + **Load more** (~40). Footer `shown / issueCount`. If `issueCount > 1000`, say GitHub search stops at 1000 |
+| Filters | None. Sort stays `updated-desc` |
+| Row | `{owner/repo}#{n} title` + updated. Draft badge on both PR pages |
+| Palette | Three global Jump items (Assigned issues, Review requests, My open PRs). No `/triage` slash. `/issues` stays this-repo |
+| Reserved path | First segment `triage` is not a repo owner (same as `search`) |
+
+Not in this slice: infinite scroll, GitHub `/issues`/`/pulls` aliases, fat rows (labels/author/CI), extra sort, a fourth inbox.
+
 ### 5.3 Power triage (issues & PRs)
 
 Ship high-leverage writes the API supports correctly, including as applicable:
@@ -142,6 +162,7 @@ Use **github.com-compatible path shapes** for core entities:
 - `/{owner}/{repo}/tree/:ref/*`, `/{owner}/{repo}/blob/:ref/*`
 - `/{owner}/{repo}/commits/:ref`, `/{owner}/{repo}/commit/:sha`, `/{owner}/{repo}/compare/:base...:head`
 - User/org routes where we mirror them
+- **Not** GitHub-shaped: `/triage/assigned`, `/triage/reviews`, `/triage/prs` — global inboxes for the home cards (§5.6)
 
 ### 6.2 Intentional improvements
 
@@ -152,6 +173,8 @@ Use **github.com-compatible path shapes** for core entities:
 ### 6.3 Home
 
 `/` is a **speed tool**: triage first, repos second. Not a second GitHub marketing homepage.
+
+Triage cards (assigned issues, review requests, my open PRs) show eight rows and the GitHub `issueCount`. The title is a link to the matching `/triage/*` page. When `issueCount > 8`, a **See all N** footer links there too. Queries and row fields: §5.6.
 
 ---
 
@@ -165,7 +188,8 @@ Use **github.com-compatible path shapes** for core entities:
 
 ### 7.2 Keyboard
 
-- **Command palette** (`⌘K` / `Ctrl+K`): jump to repo, issue, PR, user, search  
+- **Command palette** (`⌘K` / `Ctrl+K`): jump to repo, issue, PR, user, search; three global Jump items for `/triage/assigned`, `/triage/reviews`, `/triage/prs`  
+- Slash `/issues` `/prs` stay **this repository**. There is no `/triage` slash command  
 - Small documented shortcut set on lists/details (e.g. j/k, focus composer)  
 - Not vim-modal  
 
@@ -551,7 +575,8 @@ Decisions locked in the 2026-07 grill session:
 21. Status badge colors: SPEC §13.1 (changes requested = solid warning; pending = outline warning; merging = info; closed = error; approved/open = success; draft/commented = ghost; merged = purple only)  
 22. Product name: **ghweb** (formerly gitweb); storage keys `ghweb.*` with one-shot migrate from `gitweb.*`  
 23. Buttons: **no `btn-outline`** — ghost for secondary/toolbar/menus; solid for primary/danger/success (§13.2). Badge outline for pending only.  
-25. Commits/compare (§5.5): list + commit detail + `base...head` compare; GQL list / REST patches; shared PR-style diffs; no TopBar Commits icon  
+25. Commits/compare (§5.5): list + commit detail + `base...head` compare; GQL list / REST patches; shared PR-style diffs; no TopBar Commits icon
+26. Home triage lists (§5.6): `/triage/assigned|reviews|prs`; same search as the home card; Load more; title + See all N; Jump items; no `/triage` slash
 
 
 
@@ -562,7 +587,7 @@ Decisions locked in the 2026-07 grill session:
 
 Resolved enough to build; refine in implementation:
 
-- Exact home triage widgets and GraphQL queries  
+- Exact home triage widgets and GraphQL queries — **resolved** §5.6 (2026-08-23) 
 - Minimum PAT scope set for onboarding copy  
 - Conversation poll interval default  
 - Whether device flow lands before or after Actions  
