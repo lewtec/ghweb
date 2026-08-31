@@ -120,6 +120,17 @@ type AddBlockedByPayload {
   issue: Issue
 }
 
+input AddCloseIssueReferencesInput {
+  clientMutationId: String
+  issueId: ID!
+  pullRequestIds: [ID!]!
+}
+
+type AddCloseIssueReferencesPayload {
+  clientMutationId: String
+  issue: Issue
+}
+
 input AddCommentInput {
   clientMutationId: String
   subjectId: ID!
@@ -3445,7 +3456,7 @@ type Enterprise implements Node {
   description: String
   descriptionHTML: HTML!
   enterpriseTeam(slug: String!): EnterpriseTeam
-  enterpriseTeams(query: String, orderBy: EnterpriseTeamOrder = { field: ID, direction: ASC }, after: String, before: String, first: Int, last: Int): EnterpriseTeamConnection!
+  enterpriseTeams(query: String, userLogins: [String!], orderBy: EnterpriseTeamOrder = { field: ID, direction: ASC }, after: String, before: String, first: Int, last: Int): EnterpriseTeamConnection!
   id: ID!
   innersourceVulnerabilities(orderBy: SecurityVulnerabilityOrder = { field: UPDATED_AT, direction: DESC }, ecosystem: SecurityAdvisoryEcosystem, package: String, severities: [SecurityAdvisorySeverity!], after: String, before: String, first: Int, last: Int): SecurityVulnerabilityConnection!
   location: String
@@ -6126,6 +6137,7 @@ type Mutation {
   accessUserNamespaceRepository(input: AccessUserNamespaceRepositoryInput!): AccessUserNamespaceRepositoryPayload
   addAssigneesToAssignable(input: AddAssigneesToAssignableInput!): AddAssigneesToAssignablePayload
   addBlockedBy(input: AddBlockedByInput!): AddBlockedByPayload
+  addCloseIssueReferences(input: AddCloseIssueReferencesInput!): AddCloseIssueReferencesPayload
   addComment(input: AddCommentInput!): AddCommentPayload
   addDiscussionComment(input: AddDiscussionCommentInput!): AddDiscussionCommentPayload
   addDiscussionPollVote(input: AddDiscussionPollVoteInput!): AddDiscussionPollVotePayload
@@ -6269,6 +6281,7 @@ type Mutation {
   rejectPendingIssueSuggestions(input: RejectPendingIssueSuggestionsInput!): RejectPendingIssueSuggestionsPayload
   removeAssigneesFromAssignable(input: RemoveAssigneesFromAssignableInput!): RemoveAssigneesFromAssignablePayload
   removeBlockedBy(input: RemoveBlockedByInput!): RemoveBlockedByPayload
+  removeCloseIssueReferences(input: RemoveCloseIssueReferencesInput!): RemoveCloseIssueReferencesPayload
   removeEnterpriseAdmin(input: RemoveEnterpriseAdminInput!): RemoveEnterpriseAdminPayload
   removeEnterpriseIdentityProvider(input: RemoveEnterpriseIdentityProviderInput!): RemoveEnterpriseIdentityProviderPayload
   removeEnterpriseMember(input: RemoveEnterpriseMemberInput!): RemoveEnterpriseMemberPayload
@@ -9337,6 +9350,12 @@ type PullRequestReviewThreadEdge {
   node: PullRequestReviewThread
 }
 
+enum PullRequestReviewThreadResolutionReason {
+  ADDRESSED
+  WONT_FIX
+  INVALID
+}
+
 enum PullRequestReviewThreadSubjectType {
   LINE
   FILE
@@ -9915,6 +9934,17 @@ input RemoveBlockedByInput {
 
 type RemoveBlockedByPayload {
   blockingIssue: Issue
+  clientMutationId: String
+  issue: Issue
+}
+
+input RemoveCloseIssueReferencesInput {
+  clientMutationId: String
+  issueId: ID!
+  pullRequestIds: [ID!]!
+}
+
+type RemoveCloseIssueReferencesPayload {
   clientMutationId: String
   issue: Issue
 }
@@ -11614,6 +11644,7 @@ type RerequestCheckSuitePayload {
 
 input ResolveReviewThreadInput {
   clientMutationId: String
+  resolutionReason: PullRequestReviewThreadResolutionReason
   threadId: ID!
 }
 
