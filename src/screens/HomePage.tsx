@@ -1,4 +1,4 @@
-import { Suspense, useMemo, type ReactNode } from 'react';
+import { Suspense, useMemo } from 'react';
 import { graphql, useLazyLoadQuery } from 'react-relay';
 import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
 import { Link } from '@tanstack/react-router';
@@ -150,18 +150,50 @@ function signalLabel(kinds: string[]): string {
   return parts.join(' · ');
 }
 
+type TriagePreviewTo =
+  | '/$owner/$name/issues/$number'
+  | '/$owner/$name/pull/$number';
+
+type TriagePreviewNode = {
+  readonly id?: string;
+  readonly number?: number;
+  readonly title?: string;
+  readonly isDraft?: boolean;
+  readonly repository?: {
+    readonly name: string;
+    readonly nameWithOwner: string;
+    readonly owner: {
+      readonly login: string;
+    };
+  };
+} | null | undefined;
+
 function TriagePreviewCard({
   kind,
   count,
   className,
-  children,
+  nodes,
+  to,
 }: {
   kind: TriageKind;
   count: number;
   className?: string;
-  children: ReactNode;
+  nodes: ReadonlyArray<TriagePreviewNode> | null | undefined;
+  to: TriagePreviewTo;
 }) {
   const spec = TRIAGE[kind];
+  const items = (nodes ?? []).flatMap((n) => {
+    if (!n || n.id == null || n.number == null || !n.repository) return [];
+    return [
+      {
+        id: n.id,
+        number: n.number,
+        title: n.title,
+        isDraft: n.isDraft,
+        repository: n.repository,
+      },
+    ];
+  });
   return (
     <div
       className={cn(
@@ -175,7 +207,35 @@ function TriagePreviewCard({
             {spec.title} ({count})
           </Link>
         </h3>
-        <ul className="divide-y divide-base-300">{children}</ul>
+        <ul className="divide-y divide-base-300">
+          {items.length ? (
+            items.map((n) => (
+              <li key={n.id} className="dense-row min-w-0">
+                <Link
+                  to={to}
+                  params={{
+                    owner: n.repository.owner.login,
+                    name: n.repository.name,
+                    number: String(n.number),
+                  }}
+                  className="link link-hover block min-w-0"
+                >
+                  <span className="opacity-60 text-xs me-1">
+                    {n.repository.nameWithOwner}#{n.number}
+                  </span>
+                  {n.title}
+                  {n.isDraft ? (
+                    <span className="badge badge-ghost badge-xs ms-1">
+                      draft
+                    </span>
+                  ) : null}
+                </Link>
+              </li>
+            ))
+          ) : (
+            <li className="dense-row opacity-60 text-sm">None open</li>
+          )}
+        </ul>
         {count > TRIAGE_HOME_PREVIEW ? (
           <Link to={spec.path} className="link link-hover text-xs opacity-70 pt-1">
             See all {count}
@@ -327,101 +387,24 @@ export function HomePage() {
           <TriagePreviewCard
             kind="assigned"
             count={data.assignedIssues.issueCount}
-          >
-            {data.assignedIssues.nodes?.filter(Boolean).length ? (
-              data.assignedIssues.nodes.map((n) => {
-                if (!n || !('number' in n) || !n.repository) return null;
-                return (
-                  <li key={n.id} className="dense-row min-w-0">
-                    <Link
-                      to="/$owner/$name/issues/$number"
-                      params={{
-                        owner: n.repository.owner.login,
-                        name: n.repository.name,
-                        number: String(n.number),
-                      }}
-                      className="link link-hover block min-w-0"
-                    >
-                      <span className="opacity-60 text-xs me-1">
-                        {n.repository.nameWithOwner}#{n.number}
-                      </span>
-                      {n.title}
-                    </Link>
-                  </li>
-                );
-              })
-            ) : (
-              <li className="dense-row opacity-60 text-sm">None open</li>
-            )}
-          </TriagePreviewCard>
+            nodes={data.assignedIssues.nodes}
+            to="/$owner/$name/issues/$number"
+          />
 
           <TriagePreviewCard
             kind="reviews"
             count={data.reviewRequests.issueCount}
-          >
-            {data.reviewRequests.nodes?.filter(Boolean).length ? (
-              data.reviewRequests.nodes.map((n) => {
-                if (!n || !('number' in n) || !n.repository) return null;
-                return (
-                  <li key={n.id} className="dense-row min-w-0">
-                    <Link
-                      to="/$owner/$name/pull/$number"
-                      params={{
-                        owner: n.repository.owner.login,
-                        name: n.repository.name,
-                        number: String(n.number),
-                      }}
-                      className="link link-hover block min-w-0"
-                    >
-                      <span className="opacity-60 text-xs me-1">
-                        {n.repository.nameWithOwner}#{n.number}
-                      </span>
-                      {n.title}
-                    </Link>
-                  </li>
-                );
-              })
-            ) : (
-              <li className="dense-row opacity-60 text-sm">None open</li>
-            )}
-          </TriagePreviewCard>
+            nodes={data.reviewRequests.nodes}
+            to="/$owner/$name/pull/$number"
+          />
 
           <TriagePreviewCard
             kind="prs"
             count={data.myOpenPrs.issueCount}
             className="md:col-span-2 xl:col-span-1"
-          >
-            {data.myOpenPrs.nodes?.filter(Boolean).length ? (
-              data.myOpenPrs.nodes.map((n) => {
-                if (!n || !('number' in n) || !n.repository) return null;
-                return (
-                  <li key={n.id} className="dense-row min-w-0">
-                    <Link
-                      to="/$owner/$name/pull/$number"
-                      params={{
-                        owner: n.repository.owner.login,
-                        name: n.repository.name,
-                        number: String(n.number),
-                      }}
-                      className="link link-hover block min-w-0"
-                    >
-                      <span className="opacity-60 text-xs me-1">
-                        {n.repository.nameWithOwner}#{n.number}
-                      </span>
-                      {n.title}
-                      {'isDraft' in n && n.isDraft ? (
-                        <span className="badge badge-ghost badge-xs ms-1">
-                          draft
-                        </span>
-                      ) : null}
-                    </Link>
-                  </li>
-                );
-              })
-            ) : (
-              <li className="dense-row opacity-60 text-sm">None open</li>
-            )}
-          </TriagePreviewCard>
+            nodes={data.myOpenPrs.nodes}
+            to="/$owner/$name/pull/$number"
+          />
         </div>
       </section>
 
