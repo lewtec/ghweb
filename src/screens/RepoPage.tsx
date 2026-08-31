@@ -212,20 +212,35 @@ function RepoReadme({
   htmlContext: string;
 }) {
   const [html, setHtml] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
   useEffect(() => {
-    let c = false;
-    void renderMarkdownGfm(markdown, htmlContext).then(
-      (h) => {
-        if (!c) setHtml(h);
-      },
-      () => {
-        if (!c) setHtml(null);
-      },
-    );
+    let cancelled = false;
+    setHtml(null);
+    setErr(null);
+    void renderMarkdownGfm(markdown, htmlContext)
+      .then((h) => {
+        if (!cancelled) setHtml(h);
+      })
+      .catch((e: unknown) => {
+        if (!cancelled)
+          setErr(e instanceof Error ? e.message : String(e));
+      });
     return () => {
-      c = true;
+      cancelled = true;
     };
   }, [markdown, htmlContext]);
+
+  if (err) {
+    return (
+      <div className="space-y-2">
+        <div className="alert alert-warning text-sm">
+          GFM render failed ({err}). Showing plain text.
+        </div>
+        <GithubMarkdown text={markdown} />
+      </div>
+    );
+  }
   if (html == null) return <LoadingBlock label="Rendering README…" />;
   return <GithubMarkdown html={html} text={markdown} />;
 }
