@@ -12,5 +12,14 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
+    // Only product sources — local git worktrees under `.worktrees/` must not
+    // inflate the suite or run stale/duplicate tests from parallel branches.
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/.worktrees/**',
+      '**/.{idea,git,cache,output,temp}/**',
+    ],
   },
 });

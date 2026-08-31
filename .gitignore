@@ -11,3 +11,5 @@ playwright-report
 test-results
 *.tsbuildinfo
 dist
+# Local linked worktrees (janitor / multi-branch tooling)
+.worktrees/
