@@ -64,19 +64,19 @@ export function checkBadgeClass(
   }
 }
 
+function humanizeCheckToken(value: string): string {
+  return value.toLowerCase().replace(/_/g, ' ');
+}
+
 export function checkLabel(
   status: CheckStatus,
   conclusion: CheckConclusion,
 ): string {
   if (isCheckInProgress(status)) {
-    return String(status)
-      .toLowerCase()
-      .replace(/_/g, ' ');
+    return humanizeCheckToken(String(status));
   }
   if (conclusion) {
-    return String(conclusion)
-      .toLowerCase()
-      .replace(/_/g, ' ');
+    return humanizeCheckToken(String(conclusion));
   }
   return 'unknown';
 }
