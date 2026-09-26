@@ -1,3 +1,5 @@
+import { encodeRepoPath } from '@/lib/permalinks';
+
 /**
  * Repo-relative path resolution for goto / cmdk (POSIX-like).
  */
@@ -189,11 +191,7 @@ export function appPathForObject(
     if (kind === 'tree') return `/${owner}/${name}/tree/${ref}`;
     return `/${owner}/${name}`;
   }
-  const enc = path
-    .split('/')
-    .map((s) => encodeURIComponent(s))
-    .join('/');
-  return `/${owner}/${name}/${kind}/${ref}/${enc}`;
+  return `/${owner}/${name}/${kind}/${ref}/${encodeRepoPath(path)}`;
 }
 
 /**

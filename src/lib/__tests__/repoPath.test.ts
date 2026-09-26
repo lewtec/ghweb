@@ -145,6 +145,9 @@ describe('appPathForObject', () => {
     expect(appPathForObject('o', 'r', 'main', 'src/a.ts', 'blob')).toBe(
       '/o/r/blob/main/src/a.ts',
     );
+    expect(appPathForObject('o', 'r', 'main', 'a/b c', 'blob')).toBe(
+      '/o/r/blob/main/a/b%20c',
+    );
   });
 });
 
