@@ -11,7 +11,7 @@ import { getWebOrigin } from '@/lib/auth';
 import { useToast } from '@/lib/toast';
 import { useLiveQuery } from '@/lib/useLiveQuery';
 import { ExternalLink } from '@/components/ExternalLink';
-import { AuthorByline } from '@/components/AuthorByline';
+import { AuthorByline, authorFromActor } from '@/components/AuthorByline';
 import { GithubMarkdown } from '@/components/GithubMarkdown';
 import { IssueStateBadge } from '@/components/IssueStateBadge';
 import { CopyableNumber } from '@/components/CopyableNumber';
@@ -352,18 +352,7 @@ export function IssueDetailPage({ owner, name, number }: Props) {
           <div className="mb-2">
             <AuthorByline
               size="md"
-              author={
-                issue.author
-                  ? {
-                      login: issue.author.login,
-                      avatarUrl: issue.author.avatarUrl,
-                      name:
-                        issue.author && 'name' in issue.author
-                          ? (issue.author as { name?: string | null }).name
-                          : null,
-                    }
-                  : null
-              }
+              author={authorFromActor(issue.author)}
               meta={new Date(issue.createdAt).toLocaleString()}
             />
           </div>
@@ -380,18 +369,7 @@ export function IssueDetailPage({ owner, name, number }: Props) {
               >
                 <div className="mb-2">
                   <AuthorByline
-                    author={
-                      c.author
-                        ? {
-                            login: c.author.login,
-                            avatarUrl: c.author.avatarUrl,
-                            name:
-                              c.author && 'name' in c.author
-                                ? (c.author as { name?: string | null }).name
-                                : null,
-                          }
-                        : null
-                    }
+                    author={authorFromActor(c.author)}
                     meta={new Date(c.createdAt).toLocaleString()}
                   />
                 </div>

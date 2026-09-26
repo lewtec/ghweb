@@ -7,6 +7,22 @@ export type AuthorInfo = {
   name?: string | null;
 } | null;
 
+/** Map a Relay actor (User has `name`; Bot and others may not) onto AuthorByline. */
+export function authorFromActor<
+  T extends { login: string; avatarUrl?: string | null },
+>(actor: T | null | undefined): AuthorInfo {
+  if (!actor) return null;
+  const name =
+    'name' in actor
+      ? ((actor as T & { name?: string | null }).name ?? null)
+      : null;
+  return {
+    login: actor.login,
+    avatarUrl: actor.avatarUrl ?? null,
+    name,
+  };
+}
+
 type Props = {
   author: AuthorInfo;
   /** e.g. createdAt string to show after the identity */
