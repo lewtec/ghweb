@@ -1,7 +1,7 @@
 import { graphql, useLazyLoadQuery } from 'react-relay';
 import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
 import { Link } from '@tanstack/react-router';
-import { AuthorByline } from '@/components/AuthorByline';
+import { AuthorByline, authorFromActor } from '@/components/AuthorByline';
 import { CopyableNumber } from '@/components/CopyableNumber';
 import { PrStateBadge } from '@/components/PrStateBadge';
 import type { PullsListPageQuery } from './__generated__/PullsListPageQuery.graphql';
@@ -70,18 +70,7 @@ export function PullsListPage({ owner, name }: Props) {
               </div>
               <div className="mt-1">
                 <AuthorByline
-                  author={
-                    pr.author
-                      ? {
-                          login: pr.author.login,
-                          avatarUrl: pr.author.avatarUrl,
-                          name:
-                            'name' in pr.author
-                              ? (pr.author.name as string | null)
-                              : null,
-                        }
-                      : null
-                  }
+                  author={authorFromActor(pr.author)}
                   meta={new Date(pr.updatedAt).toLocaleString()}
                 />
               </div>

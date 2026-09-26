@@ -1,7 +1,7 @@
 import { graphql, useLazyLoadQuery } from 'react-relay';
 import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
 import { Link } from '@tanstack/react-router';
-import { AuthorByline } from '@/components/AuthorByline';
+import { AuthorByline, authorFromActor } from '@/components/AuthorByline';
 import { CopyableNumber } from '@/components/CopyableNumber';
 import { IssueStateBadge } from '@/components/IssueStateBadge';
 import type { IssuesListPageQuery } from './__generated__/IssuesListPageQuery.graphql';
@@ -70,18 +70,7 @@ export function IssuesListPage({ owner, name }: Props) {
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-2">
                 <AuthorByline
-                  author={
-                    issue.author
-                      ? {
-                          login: issue.author.login,
-                          avatarUrl: issue.author.avatarUrl,
-                          name:
-                            'name' in issue.author
-                              ? (issue.author.name as string | null)
-                              : null,
-                        }
-                      : null
-                  }
+                  author={authorFromActor(issue.author)}
                   meta={new Date(issue.updatedAt).toLocaleString()}
                 />
                 {issue.labels?.nodes?.filter(Boolean).length ? (

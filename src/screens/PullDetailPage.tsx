@@ -44,7 +44,7 @@ import { useToast } from '@/lib/toast';
 import { useLiveQuery } from '@/lib/useLiveQuery';
 import { LoadingBlock } from '@/components/LoadingBlock';
 import { ExternalLink } from '@/components/ExternalLink';
-import { AuthorByline } from '@/components/AuthorByline';
+import { AuthorByline, authorFromActor } from '@/components/AuthorByline';
 import { GithubMarkdown } from '@/components/GithubMarkdown';
 import { PrStateBadge } from '@/components/PrStateBadge';
 import { ReviewStateBadge } from '@/components/ReviewStateBadge';
@@ -1050,18 +1050,7 @@ export function PullDetailPage({
               <div className="mb-2">
                 <AuthorByline
                   size="md"
-                  author={
-                    pr.author
-                      ? {
-                          login: pr.author.login,
-                          avatarUrl: pr.author.avatarUrl,
-                          name:
-                            pr.author && 'name' in pr.author
-                              ? (pr.author as { name?: string | null }).name
-                              : null,
-                        }
-                      : null
-                  }
+                  author={authorFromActor(pr.author)}
                   meta={new Date(pr.createdAt).toLocaleString()}
                 />
               </div>
@@ -1093,22 +1082,7 @@ export function PullDetailPage({
                     >
                       <div className="mb-2">
                         <AuthorByline
-                          author={
-                            item.author
-                              ? {
-                                  login: item.author.login,
-                                  avatarUrl: item.author.avatarUrl,
-                                  name:
-                                    item.author && 'name' in item.author
-                                      ? (
-                                          item.author as {
-                                            name?: string | null;
-                                          }
-                                        ).name
-                                      : null,
-                                }
-                              : null
-                          }
+                          author={authorFromActor(item.author)}
                           meta={new Date(item.createdAt).toLocaleString()}
                         />
                       </div>
@@ -1132,22 +1106,7 @@ export function PullDetailPage({
                       <div className="flex flex-wrap items-center gap-2">
                         <AuthorByline
                           className="flex-1 min-w-0"
-                          author={
-                            item.author
-                              ? {
-                                  login: item.author.login,
-                                  avatarUrl: item.author.avatarUrl,
-                                  name:
-                                    item.author && 'name' in item.author
-                                      ? (
-                                          item.author as {
-                                            name?: string | null;
-                                          }
-                                        ).name
-                                      : null,
-                                }
-                              : null
-                          }
+                          author={authorFromActor(item.author)}
                           meta={
                             item.createdAt
                               ? new Date(item.createdAt).toLocaleString()
@@ -1225,22 +1184,7 @@ export function PullDetailPage({
                       />
                       <AuthorByline
                         className="min-w-0 max-w-[12rem] sm:max-w-[16rem] !w-auto"
-                        author={
-                          item.actor
-                            ? {
-                                login: item.actor.login,
-                                avatarUrl: item.actor.avatarUrl,
-                                name:
-                                  item.actor && 'name' in item.actor
-                                    ? (
-                                        item.actor as {
-                                          name?: string | null;
-                                        }
-                                      ).name
-                                    : null,
-                              }
-                            : null
-                        }
+                        author={authorFromActor(item.actor)}
                       />
                       <span className="opacity-80">
                         force-pushed the branch from{' '}
