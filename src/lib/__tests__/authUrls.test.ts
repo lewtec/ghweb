@@ -50,5 +50,11 @@ describe('auth URL helpers', () => {
     expect(webOriginFromGraphql('https://ghe.example.com/api/graphql')).toBe(
       'https://ghe.example.com',
     );
+    expect(webHostFromGraphql('https://ghe.example.com:8443/api/graphql')).toBe(
+      'ghe.example.com:8443',
+    );
+    expect(webOriginFromGraphql('https://ghe.example.com:8443/api/graphql')).toBe(
+      'https://ghe.example.com:8443',
+    );
   });
 });
