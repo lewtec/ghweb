@@ -1,14 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback } from 'react';
 import { Link } from '@tanstack/react-router';
 import { AuthorByline } from '@/components/AuthorByline';
 import { ExternalLink } from '@/components/ExternalLink';
 import { FilesDiffList } from '@/components/FilesDiffList';
 import { ErrorBanner } from '@/components/ErrorBanner';
 import { LoadingBlock } from '@/components/LoadingBlock';
-import {
-  fetchCompare,
-  type RestCompareResult,
-} from '@/lib/rest';
+import { fetchCompare } from '@/lib/rest';
+import { useLatestAsync } from '@/lib/useLatestAsync';
 
 type Props = {
   owner: string;
@@ -18,38 +16,11 @@ type Props = {
 };
 
 export function ComparePage({ owner, name, base, head }: Props) {
-  const [data, setData] = useState<RestCompareResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  /** Monotonic id so late REST responses from a prior range/retry are ignored. */
-  const fetchSeq = useRef(0);
-
-  const load = useCallback(() => {
-    const seq = ++fetchSeq.current;
-    setLoading(true);
-    setError(null);
-    // Drop prior range while the new one loads (avoid flashing wrong compare).
-    setData(null);
-    void fetchCompare(owner, name, base, head)
-      .then((result) => {
-        if (seq === fetchSeq.current) setData(result);
-      })
-      .catch((e: unknown) => {
-        if (seq === fetchSeq.current)
-          setError(e instanceof Error ? e.message : String(e));
-      })
-      .finally(() => {
-        if (seq === fetchSeq.current) setLoading(false);
-      });
-  }, [owner, name, base, head]);
-
-  useEffect(() => {
-    load();
-    return () => {
-      // Invalidate in-flight work when range changes or the page unmounts.
-      fetchSeq.current += 1;
-    };
-  }, [load]);
+  const loadCompare = useCallback(
+    () => fetchCompare(owner, name, base, head),
+    [owner, name, base, head],
+  );
+  const { data, error, loading, reload: load } = useLatestAsync(loadCompare);
 
   return (
     <div className="w-full min-w-0 p-[clamp(0.75rem,2vw,1.25rem)]">

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback } from 'react';
 import { graphql, useLazyLoadQuery } from 'react-relay';
 import { STORE_AND_NETWORK } from '@/lib/relayPolicy';
 import { Link } from '@tanstack/react-router';
@@ -9,7 +9,8 @@ import { ExternalLink } from '@/components/ExternalLink';
 import { FilesDiffList } from '@/components/FilesDiffList';
 import { ErrorBanner } from '@/components/ErrorBanner';
 import { LoadingBlock } from '@/components/LoadingBlock';
-import { fetchCommit, type RestCommitDetail } from '@/lib/rest';
+import { fetchCommit } from '@/lib/rest';
+import { useLatestAsync } from '@/lib/useLatestAsync';
 
 const query = graphql`
   query CommitDetailPageQuery(
@@ -74,38 +75,16 @@ export function CommitDetailPage({ owner, name, sha }: Props) {
   const commit =
     repo?.object?.__typename === 'Commit' ? repo.object : null;
 
-  const [rest, setRest] = useState<RestCommitDetail | null>(null);
-  const [restErr, setRestErr] = useState<string | null>(null);
-  const [restLoading, setRestLoading] = useState(true);
-  /** Monotonic id so late REST responses from a prior SHA/retry are ignored. */
-  const fetchSeq = useRef(0);
-
-  const loadRest = useCallback(() => {
-    const seq = ++fetchSeq.current;
-    setRestLoading(true);
-    setRestErr(null);
-    // Drop prior commit files while the new SHA loads (avoid flashing wrong diffs).
-    setRest(null);
-    void fetchCommit(owner, name, sha)
-      .then((c) => {
-        if (seq === fetchSeq.current) setRest(c);
-      })
-      .catch((e: unknown) => {
-        if (seq === fetchSeq.current)
-          setRestErr(e instanceof Error ? e.message : String(e));
-      })
-      .finally(() => {
-        if (seq === fetchSeq.current) setRestLoading(false);
-      });
-  }, [owner, name, sha]);
-
-  useEffect(() => {
-    loadRest();
-    return () => {
-      // Invalidate in-flight work when SHA changes or the page unmounts.
-      fetchSeq.current += 1;
-    };
-  }, [loadRest]);
+  const loadCommit = useCallback(
+    () => fetchCommit(owner, name, sha),
+    [owner, name, sha],
+  );
+  const {
+    data: rest,
+    error: restErr,
+    loading: restLoading,
+    reload: loadRest,
+  } = useLatestAsync(loadCommit);
 
   if (!repo || !commit) {
     return (
