@@ -114,8 +114,7 @@ export function webHostFromGraphql(gqlUrl: string): string {
 export function webOriginFromGraphql(gqlUrl: string): string {
   try {
     const u = new URL(normalizeGraphqlUrl(gqlUrl));
-    const host = u.hostname === 'api.github.com' ? 'github.com' : u.host;
-    return `${u.protocol}//${host}`;
+    return `${u.protocol}//${webHostFromGraphql(gqlUrl)}`;
   } catch {
     return 'https://github.com';
   }
