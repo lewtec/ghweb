@@ -4238,10 +4238,12 @@ input FileExtensionRestrictionParametersInput {
 }
 
 type FilePathRestrictionParameters {
+  ignoredFilePaths: [String!]
   restrictedFilePaths: [String!]!
 }
 
 input FilePathRestrictionParametersInput {
+  ignoredFilePaths: [String!]
   restrictedFilePaths: [String!]!
 }
 
@@ -5756,10 +5758,12 @@ input MaxFilePathLengthParametersInput {
 }
 
 type MaxFileSizeParameters {
+  ignoredFilePaths: [String!]
   maxFileSize: Int!
 }
 
 input MaxFileSizeParametersInput {
+  ignoredFilePaths: [String!]
   maxFileSize: Int!
 }
 
