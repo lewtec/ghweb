@@ -4238,10 +4238,12 @@ input FileExtensionRestrictionParametersInput {
 }
 
 type FilePathRestrictionParameters {
+  ignoredFilePaths: [String!]
   restrictedFilePaths: [String!]!
 }
 
 input FilePathRestrictionParametersInput {
+  ignoredFilePaths: [String!]
   restrictedFilePaths: [String!]!
 }
 
@@ -5756,10 +5758,12 @@ input MaxFilePathLengthParametersInput {
 }
 
 type MaxFileSizeParameters {
+  ignoredFilePaths: [String!]
   maxFileSize: Int!
 }
 
 input MaxFileSizeParametersInput {
+  ignoredFilePaths: [String!]
   maxFileSize: Int!
 }
 
@@ -9197,6 +9201,7 @@ type PullRequestParameters {
   dismissStaleReviewsOnPush: Boolean!
   dismissalRestriction: DismissalRestriction
   requireCodeOwnerReview: Boolean!
+  requireExtraApprovalForUnattributedChanges: Boolean!
   requireLastPushApproval: Boolean!
   requiredApprovingReviewCount: Int!
   requiredReviewThreadResolution: Boolean!
@@ -9208,6 +9213,7 @@ input PullRequestParametersInput {
   dismissStaleReviewsOnPush: Boolean!
   dismissalRestriction: DismissalRestrictionInput
   requireCodeOwnerReview: Boolean!
+  requireExtraApprovalForUnattributedChanges: Boolean
   requireLastPushApproval: Boolean!
   requiredApprovingReviewCount: Int!
   requiredReviewThreadResolution: Boolean!
@@ -11266,7 +11272,8 @@ enum RepositoryPermission {
   ADMIN
   MAINTAIN
   WRITE
-  TRIAGE_PLUS
+  MODERATE
+  TRIAGE_PLUS @deprecated(reason: "TRIAGE_PLUS has been renamed to MODERATE. Use MODERATE instead. Removal on 2027-04-01 UTC.")
   TRIAGE
   READ
 }
