@@ -1812,6 +1812,20 @@ type ConvertedToDiscussionEvent implements Node {
   id: ID!
 }
 
+enum CopilotCodeReviewEffort {
+  LITE
+  BALANCED
+  MAX
+  AUTO
+}
+
+enum CopilotCodeReviewEffortLevel {
+  LITE
+  BALANCED
+  MAX
+  AUTO
+}
+
 type CopilotCodeReviewParameters {
   reviewDraftPullRequests: Boolean!
   reviewOnPush: Boolean!
@@ -1820,6 +1834,43 @@ type CopilotCodeReviewParameters {
 input CopilotCodeReviewParametersInput {
   reviewDraftPullRequests: Boolean
   reviewOnPush: Boolean
+}
+
+enum CopilotCodeReviewRequestReason {
+  ACTOR_INELIGIBLE
+  REPOSITORY_INELIGIBLE
+  APP_NOT_INSTALLED
+  NO_QUOTA_REMAINING
+  LICENSED_ORGANIZATION_UNAVAILABLE
+  REQUEST_CONFLICT
+}
+
+enum CopilotCodeReviewRunnerConfiguredBy {
+  CODE_REVIEW
+  CODING_AGENT
+}
+
+enum CopilotCodeReviewRunnerType {
+  STANDARD
+  LABELED
+}
+
+enum CopilotCodeReviewSeverityFilter {
+  NO_FILTER
+  LOW
+  LOW_AND_MEDIUM
+}
+
+type CopilotCodeReviewSource {
+  kind: CopilotCodeReviewSourceKind!
+  name: String!
+  path: String
+}
+
+enum CopilotCodeReviewSourceKind {
+  CUSTOM_INSTRUCTIONS
+  MCP
+  SKILL
 }
 
 type CopilotEndpoints {
@@ -3497,6 +3548,7 @@ type Enterprise implements Node {
   avatarUrl(size: Int): URI!
   billingEmail: String
   billingInfo: EnterpriseBillingInfo
+  copilotCodeReviewPolicy: EnterpriseCopilotCodeReviewPolicy
   createdAt: DateTime!
   databaseId: Int
   description: String
@@ -3609,6 +3661,16 @@ type EnterpriseConnection {
   nodes: [Enterprise]
   pageInfo: PageInfo!
   totalCount: Int!
+}
+
+type EnterpriseCopilotCodeReviewPolicy {
+  policyState: EnterpriseCopilotCodeReviewPolicyState
+}
+
+enum EnterpriseCopilotCodeReviewPolicyState {
+  ENABLED_FOR_ALL_ORGANIZATIONS
+  DISABLED_FOR_ALL_ORGANIZATIONS
+  CONFIGURED_BY_ORGANIZATION_ADMINS
 }
 
 enum EnterpriseDefaultRepositoryPermissionSettingValue {
@@ -4238,10 +4300,12 @@ input FileExtensionRestrictionParametersInput {
 }
 
 type FilePathRestrictionParameters {
+  ignoredFilePaths: [String!]
   restrictedFilePaths: [String!]!
 }
 
 input FilePathRestrictionParametersInput {
+  ignoredFilePaths: [String!]
   restrictedFilePaths: [String!]!
 }
 
@@ -5756,10 +5820,12 @@ input MaxFilePathLengthParametersInput {
 }
 
 type MaxFileSizeParameters {
+  ignoredFilePaths: [String!]
   maxFileSize: Int!
 }
 
 input MaxFileSizeParametersInput {
+  ignoredFilePaths: [String!]
   maxFileSize: Int!
 }
 
@@ -6342,6 +6408,7 @@ type Mutation {
   reorderEnvironment(input: ReorderEnvironmentInput!): ReorderEnvironmentPayload
   replaceActorsForAssignable(input: ReplaceActorsForAssignableInput!): ReplaceActorsForAssignablePayload
   reprioritizeSubIssue(input: ReprioritizeSubIssueInput!): ReprioritizeSubIssuePayload
+  requestCopilotCodeReview(input: RequestCopilotCodeReviewInput!): RequestCopilotCodeReviewPayload
   requestReviews(input: RequestReviewsInput!): RequestReviewsPayload
   requestReviewsByLogin(input: RequestReviewsByLoginInput!): RequestReviewsByLoginPayload
   rerequestCheckSuite(input: RerequestCheckSuiteInput!): RerequestCheckSuitePayload
@@ -6386,6 +6453,7 @@ type Mutation {
   updateDiscussionComment(input: UpdateDiscussionCommentInput!): UpdateDiscussionCommentPayload
   updateEnterpriseAdministratorRole(input: UpdateEnterpriseAdministratorRoleInput!): UpdateEnterpriseAdministratorRolePayload
   updateEnterpriseAllowPrivateRepositoryForkingSetting(input: UpdateEnterpriseAllowPrivateRepositoryForkingSettingInput!): UpdateEnterpriseAllowPrivateRepositoryForkingSettingPayload
+  updateEnterpriseCopilotCodeReviewPolicy(input: UpdateEnterpriseCopilotCodeReviewPolicyInput!): UpdateEnterpriseCopilotCodeReviewPolicyPayload
   updateEnterpriseDefaultRepositoryPermissionSetting(input: UpdateEnterpriseDefaultRepositoryPermissionSettingInput!): UpdateEnterpriseDefaultRepositoryPermissionSettingPayload
   updateEnterpriseDeployKeySetting(input: UpdateEnterpriseDeployKeySettingInput!): UpdateEnterpriseDeployKeySettingPayload
   updateEnterpriseMembersCanChangeRepositoryVisibilitySetting(input: UpdateEnterpriseMembersCanChangeRepositoryVisibilitySettingInput!): UpdateEnterpriseMembersCanChangeRepositoryVisibilitySettingPayload
@@ -6416,6 +6484,9 @@ type Mutation {
   updateLabel(input: UpdateLabelInput!): UpdateLabelPayload
   updateNotificationRestrictionSetting(input: UpdateNotificationRestrictionSettingInput!): UpdateNotificationRestrictionSettingPayload
   updateOrganizationAllowPrivateRepositoryForkingSetting(input: UpdateOrganizationAllowPrivateRepositoryForkingSettingInput!): UpdateOrganizationAllowPrivateRepositoryForkingSettingPayload
+  updateOrganizationCopilotCodeReviewPolicy(input: UpdateOrganizationCopilotCodeReviewPolicyInput!): UpdateOrganizationCopilotCodeReviewPolicyPayload
+  updateOrganizationCopilotCodeReviewRunnerConfiguration(input: UpdateOrganizationCopilotCodeReviewRunnerConfigurationInput!): UpdateOrganizationCopilotCodeReviewRunnerConfigurationPayload
+  updateOrganizationCopilotCodeReviewSettings(input: UpdateOrganizationCopilotCodeReviewSettingsInput!): UpdateOrganizationCopilotCodeReviewSettingsPayload
   updateOrganizationWebCommitSignoffSetting(input: UpdateOrganizationWebCommitSignoffSettingInput!): UpdateOrganizationWebCommitSignoffSettingPayload
   updatePatreonSponsorability(input: UpdatePatreonSponsorabilityInput!): UpdatePatreonSponsorabilityPayload
   updateProject(input: UpdateProjectInput!): UpdateProjectPayload @deprecated(reason: "Projects (classic) is being deprecated in favor of the new Projects experience, see: https://github.blog/changelog/2024-05-23-sunset-notice-projects-classic/. Removal on 2025-04-01 UTC.")
@@ -6436,6 +6507,7 @@ type Mutation {
   updateRef(input: UpdateRefInput!): UpdateRefPayload
   updateRefs(input: UpdateRefsInput!): UpdateRefsPayload
   updateRepository(input: UpdateRepositoryInput!): UpdateRepositoryPayload
+  updateRepositoryCopilotCodeReviewSettings(input: UpdateRepositoryCopilotCodeReviewSettingsInput!): UpdateRepositoryCopilotCodeReviewSettingsPayload
   updateRepositoryCustomProperty(input: UpdateRepositoryCustomPropertyInput!): UpdateRepositoryCustomPropertyPayload
   updateRepositoryRuleset(input: UpdateRepositoryRulesetInput!): UpdateRepositoryRulesetPayload
   updateRepositoryWebCommitSignoffSetting(input: UpdateRepositoryWebCommitSignoffSettingInput!): UpdateRepositoryWebCommitSignoffSettingPayload
@@ -7279,6 +7351,8 @@ type Organization implements Actor & MemberStatusable & Node & PackageOwner & Pr
   archivedAt: DateTime
   auditLog(after: String, before: String, first: Int, last: Int, query: String, orderBy: AuditLogOrder = { field: CREATED_AT, direction: DESC }): OrganizationAuditEntryConnection! @deprecated(reason: "The GraphQL audit-log is deprecated. Please use the REST API instead. Removal on 2026-04-01 UTC.")
   avatarUrl(size: Int): URI!
+  copilotCodeReviewRunnerConfiguration: OrganizationCopilotCodeReviewRunnerConfiguration
+  copilotCodeReviewSettings: OrganizationCopilotCodeReviewSettings
   createdAt: DateTime!
   databaseId: Int
   description: String
@@ -7313,6 +7387,7 @@ type Organization implements Actor & MemberStatusable & Node & PackageOwner & Pr
   newTeamUrl: URI!
   notificationDeliveryRestrictionEnabledSetting: NotificationRestrictionSettingValue!
   organizationBillingEmail: String
+  organizationCopilotCodeReviewPolicy: OrganizationCopilotCodeReviewPolicy
   packages(after: String, before: String, first: Int, last: Int, names: [String], repositoryId: ID, packageType: PackageType, orderBy: PackageOrder = { field: CREATED_AT, direction: DESC }): PackageConnection!
   pendingMembers(after: String, before: String, first: Int, last: Int): UserConnection!
   pinnableItems(types: [PinnableItemType!], after: String, before: String, first: Int, last: Int): PinnableItemConnection!
@@ -7394,6 +7469,60 @@ type OrganizationConnection {
   nodes: [Organization]
   pageInfo: PageInfo!
   totalCount: Int!
+}
+
+type OrganizationCopilotCodeReviewDefaultEffort {
+  configured: CopilotCodeReviewEffortLevel
+  editable: Boolean!
+  effective: CopilotCodeReviewEffortLevel!
+  githubDefault: CopilotCodeReviewEffortLevel!
+  managedBy: OrganizationCopilotCodeReviewPolicyManager!
+}
+
+enum OrganizationCopilotCodeReviewEffortSetting {
+  INHERIT
+  LITE
+  BALANCED
+  MAX
+  AUTO
+}
+
+type OrganizationCopilotCodeReviewPolicy {
+  configuredState: OrganizationCopilotCodeReviewPolicyState
+  editable: Boolean!
+  effectiveState: OrganizationCopilotCodeReviewPolicyState!
+  managedBy: OrganizationCopilotCodeReviewPolicyManager!
+}
+
+enum OrganizationCopilotCodeReviewPolicyConflict {
+  POLICY_MANAGED_BY_ENTERPRISE
+}
+
+enum OrganizationCopilotCodeReviewPolicyManager {
+  ENTERPRISE
+  ORGANIZATION
+}
+
+enum OrganizationCopilotCodeReviewPolicyState {
+  ENABLED
+  DISABLED
+}
+
+type OrganizationCopilotCodeReviewRunnerConfiguration {
+  allowRepositoryCustomization: Boolean!
+  configuredBy: CopilotCodeReviewRunnerConfiguredBy!
+  runnerGroupName: String
+  runnerLabels: [String!]!
+  runnerType: CopilotCodeReviewRunnerType!
+}
+
+type OrganizationCopilotCodeReviewSettings {
+  availableReviewEfforts: [CopilotCodeReviewEffortLevel!]!
+  defaultReviewEffort: OrganizationCopilotCodeReviewDefaultEffort!
+}
+
+enum OrganizationCopilotCodeReviewSettingsConflict {
+  SETTING_NOT_EDITABLE
 }
 
 type OrganizationEdge {
@@ -9197,6 +9326,7 @@ type PullRequestParameters {
   dismissStaleReviewsOnPush: Boolean!
   dismissalRestriction: DismissalRestriction
   requireCodeOwnerReview: Boolean!
+  requireExtraApprovalForUnattributedChanges: Boolean!
   requireLastPushApproval: Boolean!
   requiredApprovingReviewCount: Int!
   requiredReviewThreadResolution: Boolean!
@@ -9208,6 +9338,7 @@ input PullRequestParametersInput {
   dismissStaleReviewsOnPush: Boolean!
   dismissalRestriction: DismissalRestrictionInput
   requireCodeOwnerReview: Boolean!
+  requireExtraApprovalForUnattributedChanges: Boolean
   requireLastPushApproval: Boolean!
   requiredApprovingReviewCount: Int!
   requiredReviewThreadResolution: Boolean!
@@ -9223,6 +9354,7 @@ type PullRequestReview implements Comment & Deletable & Minimizable & Node & Rea
   bodyText: String!
   comments(after: String, before: String, first: Int, last: Int): PullRequestReviewCommentConnection!
   commit: Commit
+  copilotCodeReviewEffort: CopilotCodeReviewEffort
   createdAt: DateTime!
   createdViaEmail: Boolean!
   databaseId: Int @deprecated(reason: "`databaseId` will be removed because it does not support 64-bit signed integer identifiers. Use `fullDatabaseId` instead. Removal on 2024-07-01 UTC.")
@@ -9230,6 +9362,7 @@ type PullRequestReview implements Comment & Deletable & Minimizable & Node & Rea
   fullDatabaseId: BigInt
   id: ID!
   includesCreatedEdit: Boolean!
+  isCopilotCodeReview: Boolean!
   isMinimized: Boolean!
   lastEditedAt: DateTime
   minimizedReason: String
@@ -9261,6 +9394,7 @@ type PullRequestReviewComment implements Comment & Deletable & Minimizable & Nod
   bodyHTML: HTML!
   bodyText: String!
   commit: Commit
+  copilotCodeReviewSources: [CopilotCodeReviewSource!]!
   createdAt: DateTime!
   createdViaEmail: Boolean!
   databaseId: Int @deprecated(reason: "`databaseId` will be removed because it does not support 64-bit signed integer identifiers. Use `fullDatabaseId` instead. Removal on 2024-07-01 UTC.")
@@ -9270,6 +9404,7 @@ type PullRequestReviewComment implements Comment & Deletable & Minimizable & Nod
   fullDatabaseId: BigInt
   id: ID!
   includesCreatedEdit: Boolean!
+  isCopilotCodeReview: Boolean!
   isMinimized: Boolean!
   lastEditedAt: DateTime
   line: Int
@@ -10904,6 +11039,7 @@ type Repository implements Node & PackageOwner & ProjectOwner & ProjectV2Recent 
   refs(query: String, after: String, before: String, first: Int, last: Int, refPrefix: String!, direction: OrderDirection, orderBy: RefOrder): RefConnection
   release(tagName: String!): Release
   releases(after: String, before: String, first: Int, last: Int, orderBy: ReleaseOrder): ReleaseConnection!
+  repositoryCopilotCodeReviewSettings: RepositoryCopilotCodeReviewSettings
   repositoryCustomPropertyValue(propertyName: String!): RepositoryCustomPropertyValue
   repositoryCustomPropertyValues(after: String, before: String, first: Int, last: Int): RepositoryCustomPropertyValueConnection
   repositoryTopics(after: String, before: String, first: Int, last: Int): RepositoryTopicConnection!
@@ -11007,6 +11143,27 @@ enum RepositoryContributionType {
   PULL_REQUEST
   REPOSITORY
   PULL_REQUEST_REVIEW
+}
+
+type RepositoryCopilotCodeReviewEffort {
+  configured: CopilotCodeReviewEffortLevel
+  effective: CopilotCodeReviewEffortLevel!
+}
+
+enum RepositoryCopilotCodeReviewEffortSetting {
+  INHERIT
+  LITE
+  BALANCED
+  MAX
+  AUTO
+}
+
+type RepositoryCopilotCodeReviewSettings {
+  availableReviewEfforts: [CopilotCodeReviewEffortLevel!]!
+  customInstructionsEnabled: Boolean!
+  mcpEnabled: Boolean!
+  reviewEffort: RepositoryCopilotCodeReviewEffort!
+  severityFilter: CopilotCodeReviewSeverityFilter!
 }
 
 type RepositoryCustomProperty implements Node {
@@ -11266,7 +11423,8 @@ enum RepositoryPermission {
   ADMIN
   MAINTAIN
   WRITE
-  TRIAGE_PLUS
+  MODERATE
+  TRIAGE_PLUS @deprecated(reason: "TRIAGE_PLUS has been renamed to MODERATE. Use MODERATE instead. Removal on 2027-04-01 UTC.")
   TRIAGE
   READ
 }
@@ -11600,6 +11758,21 @@ input ReprioritizeSubIssueInput {
 type ReprioritizeSubIssuePayload {
   clientMutationId: String
   issue: Issue
+}
+
+input RequestCopilotCodeReviewInput {
+  clientMutationId: String
+  pullRequestId: ID!
+  reviewEffort: CopilotCodeReviewEffort
+}
+
+type RequestCopilotCodeReviewPayload {
+  actor: Actor
+  clientMutationId: String
+  failureReason: CopilotCodeReviewRequestReason
+  pullRequest: PullRequest
+  reviewRequest: ReviewRequest
+  success: Boolean
 }
 
 input RequestReviewsByLoginInput {
@@ -13930,6 +14103,17 @@ type UpdateEnterpriseAllowPrivateRepositoryForkingSettingPayload {
   message: String
 }
 
+input UpdateEnterpriseCopilotCodeReviewPolicyInput {
+  clientMutationId: String
+  enterpriseId: ID!
+  policyState: EnterpriseCopilotCodeReviewPolicyState!
+}
+
+type UpdateEnterpriseCopilotCodeReviewPolicyPayload {
+  clientMutationId: String
+  policy: EnterpriseCopilotCodeReviewPolicy
+}
+
 input UpdateEnterpriseDefaultRepositoryPermissionSettingInput {
   clientMutationId: String
   enterpriseId: ID!
@@ -14311,6 +14495,44 @@ type UpdateOrganizationAllowPrivateRepositoryForkingSettingPayload {
   organization: Organization
 }
 
+input UpdateOrganizationCopilotCodeReviewPolicyInput {
+  clientMutationId: String
+  organizationId: ID!
+  state: OrganizationCopilotCodeReviewPolicyState!
+}
+
+type UpdateOrganizationCopilotCodeReviewPolicyPayload {
+  clientMutationId: String
+  conflict: OrganizationCopilotCodeReviewPolicyConflict
+  policy: OrganizationCopilotCodeReviewPolicy
+}
+
+input UpdateOrganizationCopilotCodeReviewRunnerConfigurationInput {
+  clientMutationId: String
+  organizationId: ID!
+  runnerType: CopilotCodeReviewRunnerType!
+  runnerLabels: [String!]
+  runnerGroupName: String
+  allowRepositoryCustomization: Boolean
+}
+
+type UpdateOrganizationCopilotCodeReviewRunnerConfigurationPayload {
+  clientMutationId: String
+  runnerConfiguration: OrganizationCopilotCodeReviewRunnerConfiguration
+}
+
+input UpdateOrganizationCopilotCodeReviewSettingsInput {
+  clientMutationId: String
+  organizationId: ID!
+  defaultReviewEffort: OrganizationCopilotCodeReviewEffortSetting
+}
+
+type UpdateOrganizationCopilotCodeReviewSettingsPayload {
+  clientMutationId: String
+  conflict: OrganizationCopilotCodeReviewSettingsConflict
+  settings: OrganizationCopilotCodeReviewSettings
+}
+
 input UpdateOrganizationWebCommitSignoffSettingInput {
   clientMutationId: String
   organizationId: ID!
@@ -14559,6 +14781,20 @@ input UpdateRefsInput {
 
 type UpdateRefsPayload {
   clientMutationId: String
+}
+
+input UpdateRepositoryCopilotCodeReviewSettingsInput {
+  clientMutationId: String
+  repositoryId: ID!
+  reviewEffort: RepositoryCopilotCodeReviewEffortSetting
+  severityFilter: CopilotCodeReviewSeverityFilter
+  customInstructionsEnabled: Boolean
+  mcpEnabled: Boolean
+}
+
+type UpdateRepositoryCopilotCodeReviewSettingsPayload {
+  clientMutationId: String
+  settings: RepositoryCopilotCodeReviewSettings
 }
 
 input UpdateRepositoryCustomPropertyInput {
